@@ -1,0 +1,7 @@
+<div class="map-container">
+  <div class="device-list-container">
+    <app-device-list (deviceSelected)="onDeviceSelected($event)"></app-device-list>
+  </div>
+  <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="600px" width="100%">
+  </google-map>
+</div>

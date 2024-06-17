@@ -1,0 +1,38 @@
+.device-list {
+  width: 100%; /* Set width to 100% to make it responsive */
+  overflow-x: auto;
+}
+
+.device-list ul {
+  list-style: none;
+  padding: 0;
+}
+.device-icon {
+  margin-right: 10px; /* Add margin to separate the icon from the text */
+}
+
+.device-list-item span {
+  flex: 1; /* Allow the text to grow and take up remaining space */
+}
+.device-list li {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+@media screen and (max-width: 768px) {
+  .device-list li {
+    padding: 5px;
+  }
+}
+
+.device-list-item {
+  display: flex; /* Use flexbox to align icon and text horizontally */
+  align-items: center; /* Align items vertically within the container */
+  cursor: pointer; /* Set cursor to pointer to indicate clickable */
+}
+
+.device-list-item:hover {
+  background-color: #f0f0f0; /* Optionally change background color on hover */
+}
+

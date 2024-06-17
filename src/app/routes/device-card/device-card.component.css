@@ -1,0 +1,69 @@
+/* .device-card {
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  width: 250px;
+}
+
+.device-card h3 {
+  margin-top: 0;
+}
+
+.device-card-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.device-card-buttons button {
+  background-color: #007bff;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.device-card-buttons button:hover {
+  background-color: #0056b3;
+}
+ */
+
+
+
+
+ .map-container {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+.status-card {
+  position: absolute;
+  z-index: 10;
+}
+
+ /* .status-card {
+  position: absolute;
+  z-index: 10;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+} */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+.content {
+  margin-top: 10px;
+}

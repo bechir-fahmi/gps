@@ -1,0 +1,19 @@
+<div class="device-list">
+  <h2>Devices</h2>
+  <p-scroller
+    [items]="devices"
+    [itemSize]="50"
+    scrollHeight="25rem"
+    styleClass="border-1 surface-border"
+    [style]="{'width': '100%', 'height': '25rem'}">
+    <ng-template pTemplate="item" let-device let-options="options">
+      <div pTooltip="Car Currently is {{device.status}}" class="device-list-item" [ngClass]="{ 'surface-ground': options.odd }" (click)="onDeviceClick(device)">
+        <img src="../../../assets/images/icons8-voiture-50.png" alt="Car Icon" class="device-icon">
+        <span>{{ device.name }}</span>
+        <img *ngIf="device.status === 'online'" src="../../../assets/images/wifi-online.png" alt="Online Wi-Fi Icon" class="wifi-icon">
+        <img *ngIf="device.status === 'offline'" src="../../../assets/images/wifi-offline.png" alt="Offline Wi-Fi Icon" class="wifi-icon">
+        <img *ngIf="device.status === 'unknown'" src="../../../assets/images/wifi-x.png" alt="Unknown Wi-Fi Icon" class="wifi-icon">
+      </div>
+    </ng-template>
+  </p-scroller>
+</div>

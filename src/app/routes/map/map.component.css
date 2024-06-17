@@ -1,0 +1,21 @@
+.map-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  position: relative;
+}
+
+google-map {
+  flex: 1;
+  height: 100vh; /* Ensure the map takes full viewport height */
+}
+
+.device-list-container {
+  width: 300px; /* Set a fixed width for the device list */
+  height: 100vh; /* Ensure it takes full viewport height */
+  overflow-y: auto; /* Add scroll for overflow */
+  background-color: #f8f9fa; /* Light background for the list */
+  border-right: 1px solid #ddd; /* Optional: border to separate the list from the map */
+  padding: 10px; /* Padding for better spacing */
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Optional: shadow for better visual separation */
+}
