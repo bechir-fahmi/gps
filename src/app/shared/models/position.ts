@@ -14,7 +14,7 @@ export interface Position {
   course: number,
   address: string
   accuracy: number,
-  network: { },
+  network:any,
   geofenceIds: any[],
-  attributes: { }
+  attributes: any
 }
