@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, Subject, forkJoin, throwError } from 'rxjs
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 import { Device } from '../../shared/models/device';
 import { Position } from '../../shared/models/position';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { WebsocketService } from '../ws/websocket.service';
 
@@ -64,8 +64,18 @@ export class DeviceService {
       );
   }
 
-  getPositions(): Observable<Position[]> {
-    return this._http.get<Position[]>(`${environment.API}/api/positions`,
+  getPositions(deviceId?: number, from?: string, to?: string): Observable<Position[]> {
+    let params =new HttpParams()
+    if (deviceId !== undefined) {
+      params = params.set('deviceId', deviceId.toString());
+    }
+    if (from !== undefined) {
+      params = params.set('from', from);
+    }
+    if (to !== undefined) {
+      params = params.set('to', to);
+    }
+    return this._http.get<Position[]>(`${environment.API}/api/positions`,{ params }
     )
       .pipe(
         catchError(error => {
