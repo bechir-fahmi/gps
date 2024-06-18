@@ -24,6 +24,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   carIcon: string = '../../../assets/images/icons8-voiture-50.png';
   infoWindow!: google.maps.InfoWindow;
   isZooming = false; // Define the isZooming property
+  deviceListOpen = false; // State to toggle the device list
 
   constructor(
     private deviceService: DeviceService,
@@ -180,19 +181,47 @@ export class MapComponent implements OnInit, AfterViewInit {
   onMarkerClick(selected: { device: Device, position: Position }): void {
     this.selectedDevice = selected;
 
-    const content = `
-      <div class="info-window-content">
-        <h3>${selected.device.name}</h3>
-        <p><strong>Speed:</strong> ${selected.position.speed} km/h</p>
-        <p><strong>Latitude:</strong> ${selected.position.latitude}</p>
-        <p><strong>Longitude:</strong> ${selected.position.longitude}</p>
-        <div class="info-window-buttons">
-        <button pButton type="button" icon="pi pi-stop-circle" (click)="window.dispatchEvent(new Event('stopAction'))"></button>
-        <button pButton type="button" icon="pi pi-play-circle" (click)="window.dispatchEvent(new Event('startAction'))"></button>
-        <button pButton type="button" icon="pi pi-replay" (click)="window.dispatchEvent(new Event('replayAction'))"></button>
-        </div>
-      </div>
-    `;
+    const content = document.createElement('div');
+    content.className = 'info-window-content';
+
+    const title = document.createElement('h3');
+    title.textContent = selected.device.name;
+    content.appendChild(title);
+
+    const speed = document.createElement('p');
+    speed.innerHTML = `<strong>Speed:</strong> ${selected.position.speed} km/h`;
+    content.appendChild(speed);
+
+    const latitude = document.createElement('p');
+    latitude.innerHTML = `<strong>Latitude:</strong> ${selected.position.latitude}`;
+    content.appendChild(latitude);
+
+    const longitude = document.createElement('p');
+    longitude.innerHTML = `<strong>Longitude:</strong> ${selected.position.longitude}`;
+    content.appendChild(longitude);
+
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'info-window-buttons';
+
+    const stopButton = document.createElement('button');
+    stopButton.className = 'p-button p-component';
+    stopButton.innerHTML = '<span class="p-button-icon pi pi-stop-circle"></span>';
+    stopButton.addEventListener('click', () => window.dispatchEvent(new Event('stopAction')));
+    buttonsDiv.appendChild(stopButton);
+
+    const startButton = document.createElement('button');
+    startButton.className = 'p-button p-component';
+    startButton.innerHTML = '<span class="p-button-icon pi pi-play-circle"></span>';
+    startButton.addEventListener('click', () => window.dispatchEvent(new Event('startAction')));
+    buttonsDiv.appendChild(startButton);
+
+    const replayButton = document.createElement('button');
+    replayButton.className = 'p-button p-component';
+    replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span>';
+    replayButton.addEventListener('click', () => window.dispatchEvent(new Event('replayAction')));
+    buttonsDiv.appendChild(replayButton);
+
+    content.appendChild(buttonsDiv);
 
     this.infoWindow.setContent(content);
     this.infoWindow.open(this.map, this.markers.get(selected.device.id));
@@ -229,6 +258,10 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isZooming = false;
         callback();
       }
-    }, 100);
+    }, 100);  // Faster interval for smoother effect
+  }
+
+  toggleDeviceList(): void {
+    this.deviceListOpen = !this.deviceListOpen;
   }
 }

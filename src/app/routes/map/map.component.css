@@ -2,6 +2,7 @@
   height: 100%;
   width: 100%;
   display: flex;
+  flex-direction: row; /* Ensure the map and list are side by side */
   position: relative;
 }
 
@@ -11,11 +12,107 @@ google-map {
 }
 
 .device-list-container {
-  width: 300px; /* Set a fixed width for the device list */
+  width: 300px; /* Set a fixed width for the device list on larger screens */
   height: 100vh; /* Ensure it takes full viewport height */
   overflow-y: auto; /* Add scroll for overflow */
   background-color: #f8f9fa; /* Light background for the list */
   border-right: 1px solid #ddd; /* Optional: border to separate the list from the map */
   padding: 10px; /* Padding for better spacing */
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Optional: shadow for better visual separation */
+  transition: transform 0.3s ease;
+}
+
+.toggle-button {
+  display: none; /* Hide the button on larger screens */
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.close-button {
+  display: none; /* Hide the close button on larger screens */
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .map-container {
+    flex-direction: row; /* Stack map and list horizontally on small screens */
+  }
+
+  google-map {
+    height: 100vh; /* Make the map take full height on small screens */
+  }
+
+  .device-list-container {
+    width: 80%; /* Make the list take most of the screen width on small screens */
+    height: 100vh; /* Make the list take full height */
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+  }
+
+  .device-list-container.open {
+    transform: translateX(0);
+  }
+
+  .toggle-button {
+    display: block; /* Show the button on small screens */
+  }
+
+  .close-button {
+    display: block; /* Show the close button on small screens */
+  }
+}
+
+.info-window-content {
+  font-family: Arial, sans-serif;
+}
+
+.info-window-content h3 {
+  margin: 0;
+}
+
+.info-window-content p {
+  margin: 0.5em 0;
+}
+
+.info-window-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.info-window-buttons button {
+  padding: 5px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-window-buttons button:hover {
+  background-color: #0056b3;
 }

@@ -1,7 +1,9 @@
 <div class="map-container">
-  <div class="device-list-container">
+  <button class="toggle-button" (click)="toggleDeviceList()">☰</button>
+  <div class="device-list-container" [class.open]="deviceListOpen">
+    <button class="close-button" (click)="toggleDeviceList()">✖</button>
     <app-device-list (deviceSelected)="onDeviceSelected($event)"></app-device-list>
   </div>
-  <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="600px" width="100%">
+  <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%">
   </google-map>
 </div>
