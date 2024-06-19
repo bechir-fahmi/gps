@@ -1,7 +1,7 @@
 export interface Command {
-  id: number;
+  id?: number;
   deviceId: number;
-  description: string;
+  description?: string;
   type: string;
-  attributes: { };
+  attributes?: { };
 }

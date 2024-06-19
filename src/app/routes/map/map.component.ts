@@ -4,6 +4,8 @@ import { Position } from '../../shared/models/position';
 import { GoogleMap } from '@angular/google-maps';
 import { DeviceService } from '../../Services/device/device.service';
 import { GoogleMapsLoaderService } from '../../Services/google-map-loader/google-maps-loader.service';
+import { CommandsService } from '../../Services/commands/commands.service';
+import { Command } from '../../shared/models/command';
 
 @Component({
   selector: 'app-map',
@@ -25,12 +27,27 @@ export class MapComponent implements OnInit, AfterViewInit {
   infoWindow!: google.maps.InfoWindow;
   isZooming = false; // Define the isZooming property
   deviceListOpen = false; // State to toggle the device list
+  replaying = false; // State to track if replay is active
+  trajectory: google.maps.Polyline | null = null; // To store the trajectory polyline
+  replayTimer: any; // Timer for replay
+
+  // Default date values
+  fromDate: string;
+  toDate: string;
 
   constructor(
     private deviceService: DeviceService,
     private mapsLoader: GoogleMapsLoaderService,
-    private ngZone: NgZone
-  ) { }
+    private ngZone: NgZone,
+    private commandService:CommandsService
+  ) {
+    const today = new Date();
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 7);
+
+    this.fromDate = lastWeek.toISOString().split('T')[0] + 'T00:00:00Z';
+    this.toDate = today.toISOString().split('T')[0] + 'T23:59:59Z';
+  }
 
   ngOnInit(): void {
     this.deviceService.getDevicesWithPositions().subscribe(data => {
@@ -51,28 +68,33 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.infoWindow = new google.maps.InfoWindow(); // Initialize InfoWindow
 
       // Listen for custom 'closeInfoWindow' event to close the InfoWindow
-      window.addEventListener('closeInfoWindow', () => {
-        this.ngZone.run(() => {
-          this.infoWindow.close();
-        });
-      });
+
+      // window.addEventListener('closeInfoWindow', () => {
+      //   this.ngZone.run(() => {
+      //     this.infoWindow.close();
+      //   });
+      // });
 
       // Listen for custom events for replay, stop, start actions
-      window.addEventListener('replayAction', () => {
+      window.addEventListener('replayAction', (event: any) => {
         this.ngZone.run(() => {
-          console.log('Replay action triggered');
+          this.startReplay(event.detail.deviceId, event.detail.from, event.detail.to);
         });
       });
 
       window.addEventListener('stopAction', () => {
         this.ngZone.run(() => {
-          console.log('Stop action triggered');
+          if (this.selectedDevice) {
+            this.stopCar(this.selectedDevice.device.id,"engineStop");
+          }
         });
       });
 
       window.addEventListener('startAction', () => {
         this.ngZone.run(() => {
-          console.log('Start action triggered');
+          if (this.selectedDevice) {
+            this.startCar(this.selectedDevice.device.id,"engineResume");
+          }
         });
       });
     }).catch(error => {
@@ -218,13 +240,83 @@ export class MapComponent implements OnInit, AfterViewInit {
     const replayButton = document.createElement('button');
     replayButton.className = 'p-button p-component';
     replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span>';
-    replayButton.addEventListener('click', () => window.dispatchEvent(new Event('replayAction')));
+    replayButton.addEventListener('click', () => {
+      const replayEvent = new CustomEvent('replayAction', {
+        detail: { deviceId: selected.device.id, from: this.fromDate, to: this.toDate }
+      });
+      window.dispatchEvent(replayEvent);
+    });
     buttonsDiv.appendChild(replayButton);
 
     content.appendChild(buttonsDiv);
 
     this.infoWindow.setContent(content);
     this.infoWindow.open(this.map, this.markers.get(selected.device.id));
+  }
+
+  startReplay(deviceId: number, from?: string, to?: string): void {
+    if (this.replaying) {
+      // this.stopReplay();
+    }
+
+    this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
+      if (positions.length > 0) {
+        this.replaying = true;
+
+        // Clear existing trajectory if any
+        if (this.trajectory) {
+          this.trajectory.setMap(null);
+        }
+
+        // Create a new polyline for the trajectory
+        const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
+        this.trajectory = new google.maps.Polyline({
+          path,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+        this.trajectory.setMap(this.map);
+
+        // Replay the trajectory
+        let index = 0;
+        this.replayTimer = setInterval(() => {
+          if (index < positions.length) {
+            const position = positions[index];
+            this.center = { lat: position.latitude, lng: position.longitude };
+            this.map.panTo(this.center);
+            this.updateMarkers([position]);
+            index++;
+          } else {
+            // this.stopReplay();
+          }
+        }, 1000); // Adjust the interval as needed
+      } else {
+        alert('No data for this date range');
+      }
+    });
+  }
+
+  startCar(deviceId: number,action: string): void {
+    let test: Command = {
+      deviceId: deviceId,
+      type: action
+    };
+    this.commandService.DispatchCommand(test).subscribe(res=>{
+    console.log("started");
+
+    })
+  }
+  stopCar(deviceId:number,action:string): void {
+    let test: Command = {
+      deviceId: deviceId,
+      type: action
+    };
+    this.commandService.DispatchCommand(test).subscribe(res=>{
+    console.log("stoped");
+
+    })
   }
 
   onDeviceSelected(device: Device): void {
@@ -263,5 +355,11 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   toggleDeviceList(): void {
     this.deviceListOpen = !this.deviceListOpen;
+  }
+
+  updateReplayDates(): void {
+    if (this.selectedDevice) {
+      this.startReplay(this.selectedDevice.device.id, this.fromDate, this.toDate);
+    }
   }
 }

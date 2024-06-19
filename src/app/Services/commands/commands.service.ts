@@ -11,7 +11,7 @@ export class CommandsService {
   constructor(private _http:HttpClient) { }
 
   DispatchCommand(command:Command){
-    return this._http.post(`${environment.API}/commands/send`,command)
+    return this._http.post(`${environment.API}/api/commands/send`,command)
   }
 
 }
