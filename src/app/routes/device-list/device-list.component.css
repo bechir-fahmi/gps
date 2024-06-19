@@ -9,6 +9,8 @@
 }
 .device-icon {
   margin-right: 10px; /* Add margin to separate the icon from the text */
+  width: 50px;
+  height: 60px;
 }
 
 .device-list-item span {
