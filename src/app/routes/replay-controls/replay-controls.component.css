@@ -1,0 +1,33 @@
+.replay-controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.replay-header {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+}
+
+.replay-body {
+  display: flex;
+  gap: 10px;
+}
+
+.replay-body button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}

@@ -147,3 +147,9 @@ google-map {
 .video-player-controls button span.material-icons {
   font-size: 24px;
 }
+
+:host {
+  display: block;
+  height: 100%;
+  position: relative;
+}

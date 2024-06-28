@@ -1,0 +1,12 @@
+<div class="replay-controls">
+  <div class="replay-header">
+    <button (click)="closeReplay()">×</button>
+  </div>
+  <div class="replay-body">
+    <button (click)="playReplay()">
+      <span *ngIf="!isPlaying" class="pi pi-play"></span>
+      <span *ngIf="isPlaying" class="pi pi-pause"></span>
+    </button>
+    <button (click)="stopReplay()"><span class="pi pi-stop"></span></button>
+  </div>
+</div>

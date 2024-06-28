@@ -1,9 +1,17 @@
 <div class="map-container">
+  <p-toast />
   <button class="toggle-button" (click)="toggleDeviceList()">☰</button>
   <div class="device-list-container" [class.open]="deviceListOpen">
     <button class="close-button" (click)="toggleDeviceList()">✖</button>
     <app-device-list (deviceSelected)="onDeviceSelected($event)"></app-device-list>
   </div>
   <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%">
-  </google-map>
+
+   </google-map>
+   <div class="replay-controls" style="display: none;">
+    <p-button (click)="playReplay()" label="Play"/>
+    <p-button (click)="stopReplay()" label="Stop"/>
+    <p-button (click)="closeReplay()" label="Close"/>
+
+  </div>
 </div>

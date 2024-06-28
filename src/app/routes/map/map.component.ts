@@ -6,11 +6,16 @@ import { DeviceService } from '../../Services/device/device.service';
 import { GoogleMapsLoaderService } from '../../Services/google-map-loader/google-maps-loader.service';
 import { CommandsService } from '../../Services/commands/commands.service';
 import { Command } from '../../shared/models/command';
+import { MessageService } from 'primeng/api';
+import { MatDialog } from '@angular/material/dialog';
+import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
+
 
 @Component({
   selector: 'app-map',
   templateUrl: './map.component.html',
-  styleUrls: ['./map.component.css']
+  styleUrls: ['./map.component.css'],
+  providers: [MessageService]
 })
 export class MapComponent implements OnInit, AfterViewInit {
   @ViewChild('mapElement', { static: false }) mapElement!: GoogleMap;
@@ -25,21 +30,24 @@ export class MapComponent implements OnInit, AfterViewInit {
   mapId: string = "bdf0595e5330a4d";
   carIcon: string = '../../../assets/images/icons8-voiture-50.png';
   infoWindow!: google.maps.InfoWindow;
-  isZooming = false; // Define the isZooming property
-  deviceListOpen = false; // State to toggle the device list
-  replaying = false; // State to track if replay is active
-  trajectory: google.maps.Polyline | null = null; // To store the trajectory polyline
-  replayTimer: any; // Timer for replay
-
-  // Default date values
+  isZooming = false;
+  deviceListOpen = false;
+  replaying = false;
+  trajectory: google.maps.Polyline | null = null;
+  replayTimer: any;
+  stopAutoFollow = false;
   fromDate: string;
   toDate: string;
-
-  constructor(
+  replayMarker: google.maps.marker.AdvancedMarkerElement | null = null;
+  trajectoryPolyline: google.maps.Polyline | null = null;
+  trajectoryPath: google.maps.LatLngLiteral[] = [];
+  polylines: Map<number, google.maps.Polyline> = new Map();
+  constructor(private dialog: MatDialog,
     private deviceService: DeviceService,
     private mapsLoader: GoogleMapsLoaderService,
     private ngZone: NgZone,
-    private commandService:CommandsService
+    private commandService: CommandsService,
+    private messageService: MessageService
   ) {
     const today = new Date();
     const lastWeek = new Date(today);
@@ -65,27 +73,28 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.mapsLoader.load().then(() => {
       this.map = this.mapElement.googleMap!;
       this.initializeMarkers();
-      this.infoWindow = new google.maps.InfoWindow(); // Initialize InfoWindow
+      this.infoWindow = new google.maps.InfoWindow();
 
-      // Listen for custom 'closeInfoWindow' event to close the InfoWindow
-
-      // window.addEventListener('closeInfoWindow', () => {
-      //   this.ngZone.run(() => {
-      //     this.infoWindow.close();
-      //   });
-      // });
-
-      // Listen for custom events for replay, stop, start actions
       window.addEventListener('replayAction', (event: any) => {
         this.ngZone.run(() => {
-          this.startReplay(event.detail.deviceId, event.detail.from, event.detail.to);
+          const dialogRef = this.dialog.open(DateRangeDialogComponent, {
+            width: 'auto',
+            data: { fromDate: this.fromDate, toDate: this.toDate }
+          });
+
+          dialogRef.afterClosed().subscribe(result => {
+            if (result&&this.selectedDevice) {
+              const { fromDate, toDate } = result;
+              this.startReplay(this.selectedDevice.device.id, fromDate, toDate);
+            }
+          });
         });
       });
 
       window.addEventListener('stopAction', () => {
         this.ngZone.run(() => {
           if (this.selectedDevice) {
-            this.stopCar(this.selectedDevice.device.id,"engineStop");
+            this.stopCar(this.selectedDevice.device.id, "engineStop");
           }
         });
       });
@@ -93,9 +102,13 @@ export class MapComponent implements OnInit, AfterViewInit {
       window.addEventListener('startAction', () => {
         this.ngZone.run(() => {
           if (this.selectedDevice) {
-            this.startCar(this.selectedDevice.device.id,"engineResume");
+            this.startCar(this.selectedDevice.device.id, "engineResume");
           }
         });
+      });
+
+      this.map.addListener('dragstart', () => {
+        this.stopAutoFollow = true;
       });
     }).catch(error => {
       console.error('Google Maps API loading error:', error);
@@ -110,11 +123,23 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     this.devicesWithPositions.forEach(({ device, position }) => {
       this.addMarker(device, position);
+
+      // Create a new polyline for each device
+      const polyline = new google.maps.Polyline({
+        path: [new google.maps.LatLng(position.latitude, position.longitude)],
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+      });
+      polyline.setMap(this.map);
+      this.polylines.set(device.id, polyline);
     });
   }
 
+
   addMarker(device: Device, position: Position): void {
-    const positionLatLng = { lat: position.latitude, lng: position.longitude };
+    const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
 
     const wrapper = document.createElement('div');
     wrapper.style.position = 'relative';
@@ -132,15 +157,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     nameElement.style.fontSize = '12px';
     nameElement.style.fontWeight = 'bold';
 
-    const speedElement = document.createElement('div');
-    speedElement.innerText = `Speed: ${position.speed} km/h`;
-    speedElement.style.backgroundColor = 'white';
-    speedElement.style.padding = '2px 5px';
-    speedElement.style.borderRadius = '3px';
-    speedElement.style.boxShadow = '0px 0px 2px rgba(0, 0, 0, 0.3)';
-    speedElement.style.marginBottom = '5px';
-    speedElement.style.fontSize = '12px';
-
     const icon = document.createElement('img');
     icon.src = this.carIcon;
     icon.style.width = '50px';
@@ -148,7 +164,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     icon.style.transform = `rotate(${position.course}deg)`; // Rotate icon based on course
 
     wrapper.appendChild(nameElement);
-    wrapper.appendChild(speedElement);
     wrapper.appendChild(icon);
 
     const marker = new google.maps.marker.AdvancedMarkerElement({
@@ -159,67 +174,104 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
 
     marker.addListener('click', () => {
-      this.onMarkerClick({ device, position });
+      if (!this.replaying) {
+        this.onMarkerClick({ device, position });
+      }
     });
 
     this.markers.set(device.id, marker);
+
+    // Add to the polyline path
+    const polyline = this.polylines.get(device.id);
+    if (polyline) {
+      const path = polyline.getPath();
+      path.push(positionLatLng);
+    }
   }
 
+
   updateMarkers(positions: Position[]): void {
+    if (this.replaying) return;
     positions.forEach(position => {
       const marker = this.markers.get(position.deviceId);
       if (marker) {
-        const newPosition = { lat: position.latitude, lng: position.longitude };
+        const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
         marker.position = newPosition;
 
         if (marker.content instanceof HTMLElement) {
-          const nameElement = marker.content.querySelector('div:nth-child(1)');
-          if (nameElement instanceof HTMLElement) {
+          const nameElement = marker.content.querySelector('div:nth-child(1)') as HTMLElement;
+          if (nameElement) {
             nameElement.innerText = this.devicesWithPositions.find(d => d.device.id === position.deviceId)?.device.name || '';
           }
 
-          const speedElement = marker.content.querySelector('div:nth-child(2)');
-          if (speedElement instanceof HTMLElement) {
-            speedElement.innerText = `Speed: ${position.speed} km/h`;
-          }
-
-          const icon = marker.content.querySelector('img');
-          if (icon instanceof HTMLElement) {
+          const icon = marker.content.querySelector('img') as HTMLElement;
+          if (icon) {
             icon.style.transform = `rotate(${position.course}deg)`;
           }
         }
 
-        if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId) {
+        // Update the corresponding polyline path for the device
+        const polyline = this.polylines.get(position.deviceId);
+        if (polyline) {
+          const path = polyline.getPath();
+          path.push(newPosition);
+        }
+
+        if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId && !this.stopAutoFollow) {
           this.center = { lat: position.latitude, lng: position.longitude };
           this.map.panTo(this.center);
         }
       } else {
         const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
         this.addMarker(device, position);
+
+        // Create a new polyline for the new marker
+        const polyline = new google.maps.Polyline({
+          path: [new google.maps.LatLng(position.latitude, position.longitude)],
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+        polyline.setMap(this.map);
+        this.polylines.set(position.deviceId, polyline);
       }
     });
   }
 
-  onMarkerClick(selected: { device: Device, position: Position }): void {
-    this.selectedDevice = selected;
 
+  removeAllMarkers(): void {
+    this.markers.forEach(marker => {
+      marker.map = null;
+      marker.content = null;
+    });
+    this.markers.clear();
+
+    // Clear all polylines
+    this.polylines.forEach(polyline => polyline.setMap(null));
+    this.polylines.clear();
+  }
+
+  onMarkerClick(selectedDevice: { device: Device, position: Position }) {
+    this.selectedDevice = selectedDevice;
+    const position = { lat: selectedDevice.position.latitude, lng: selectedDevice.position.longitude };
+
+    if (!this.infoWindow) {
+      this.infoWindow = new google.maps.InfoWindow();
+    }
     const content = document.createElement('div');
     content.className = 'info-window-content';
 
     const title = document.createElement('h3');
-    title.textContent = selected.device.name;
+    title.textContent = selectedDevice.device.name;
     content.appendChild(title);
 
-    const speed = document.createElement('p');
-    speed.innerHTML = `<strong>Speed:</strong> ${selected.position.speed} km/h`;
-    content.appendChild(speed);
-
     const latitude = document.createElement('p');
-    latitude.innerHTML = `<strong>Latitude:</strong> ${selected.position.latitude}`;
+    latitude.innerHTML = `<strong>Latitude:</strong> ${selectedDevice.position.latitude}`;
     content.appendChild(latitude);
 
     const longitude = document.createElement('p');
-    longitude.innerHTML = `<strong>Longitude:</strong> ${selected.position.longitude}`;
+    longitude.innerHTML = `<strong>Longitude:</strong> ${selectedDevice.position.longitude}`;
     content.appendChild(longitude);
 
     const buttonsDiv = document.createElement('div');
@@ -242,84 +294,196 @@ export class MapComponent implements OnInit, AfterViewInit {
     replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span>';
     replayButton.addEventListener('click', () => {
       const replayEvent = new CustomEvent('replayAction', {
-        detail: { deviceId: selected.device.id, from: this.fromDate, to: this.toDate }
+        detail: { deviceId: selectedDevice.device.id, from: this.fromDate, to: this.toDate }
       });
       window.dispatchEvent(replayEvent);
     });
     buttonsDiv.appendChild(replayButton);
 
     content.appendChild(buttonsDiv);
-
+    this.infoWindow.setPosition(position);
     this.infoWindow.setContent(content);
-    this.infoWindow.open(this.map, this.markers.get(selected.device.id));
+    this.infoWindow.open(this.map);
   }
 
   startReplay(deviceId: number, from?: string, to?: string): void {
-    if (this.replaying) {
-      // this.stopReplay();
-    }
+    // if (this.replaying) {
+    //   this.stopReplay();
+    // }
+    this.replaying = true;
+    this.removeAllMarkers();
+    this.clearReplay();
+    console.log(deviceId, from, to);
 
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
       if (positions.length > 0) {
-        this.replaying = true;
+        // this.replaying = true;
+        // this.removeAllMarkers();
+        // this.displayTrajectory(positions);
 
-        // Clear existing trajectory if any
-        if (this.trajectory) {
-          this.trajectory.setMap(null);
-        }
-
-        // Create a new polyline for the trajectory
-        const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
-        this.trajectory = new google.maps.Polyline({
-          path,
-          geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 2
-        });
-        this.trajectory.setMap(this.map);
-
-        // Replay the trajectory
         let index = 0;
+        this.replayMarker = this.createReplayMarker(positions[0]);
         this.replayTimer = setInterval(() => {
           if (index < positions.length) {
             const position = positions[index];
             this.center = { lat: position.latitude, lng: position.longitude };
             this.map.panTo(this.center);
-            this.updateMarkers([position]);
+            this.updateReplayMarkerPosition(position);
             index++;
           } else {
-            // this.stopReplay();
+            this.stopReplay();
           }
-        }, 1000); // Adjust the interval as needed
+        }, 1000);
       } else {
-        alert('No data for this date range');
+        this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
+        this.replaying = false;
+        return;
       }
     });
   }
 
-  startCar(deviceId: number,action: string): void {
-    let test: Command = {
-      deviceId: deviceId,
-      type: action
-    };
-    this.commandService.DispatchCommand(test).subscribe(res=>{
-    console.log("started");
+  clearReplay(): void {
+    if (this.replayMarker) {
+      this.replayMarker.map = null;
+      this.replayMarker = null;
+    }
 
-    })
+    if (this.trajectoryPolyline) {
+      this.trajectoryPolyline.setMap(null);
+      this.trajectoryPolyline = null;
+    }
+
+    if (this.replayTimer) {
+      clearTimeout(this.replayTimer);
+      this.replayTimer = null;
+    }
   }
-  stopCar(deviceId:number,action:string): void {
+
+  createReplayMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
+    const positionLatLng = { lat: position.latitude, lng: position.longitude };
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = 'center';
+
+    const nameElement = document.createElement('div');
+    nameElement.style.backgroundColor = 'white';
+    nameElement.style.padding = '2px 5px';
+    nameElement.style.borderRadius = '3px';
+    nameElement.style.boxShadow = '0px 0px 2px rgba(0, 0, 0, 0.3)';
+    nameElement.style.marginBottom = '2px';
+    nameElement.style.fontSize = '12px';
+    nameElement.style.fontWeight = 'bold';
+
+    const icon = document.createElement('img');
+    icon.src = this.carIcon;
+    icon.style.width = '50px';
+    icon.style.height = '50px';
+    icon.style.transform = `rotate(${position.course}deg)`; // Rotate icon based on course
+
+    wrapper.appendChild(nameElement);
+    wrapper.appendChild(icon);
+
+    const replayMarker = new google.maps.marker.AdvancedMarkerElement({
+      map: this.map,
+      position: positionLatLng,
+      content: wrapper,
+    });
+
+    return replayMarker;
+  }
+
+  updateReplayMarkerPosition(position: Position): void {
+    if (this.replayMarker) {
+      const newPosition = { lat: position.latitude, lng: position.longitude };
+      this.replayMarker.position = newPosition;
+
+      if (this.replayMarker.content instanceof HTMLElement) {
+        const icon = this.replayMarker.content.querySelector('img');
+        if (icon instanceof HTMLElement) {
+          icon.style.transform = `rotate(${position.course}deg)`;
+        }
+      }
+    }
+  }
+
+  displayTrajectory(positions: Position[]): void {
+    const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
+    this.trajectory = new google.maps.Polyline({
+      path,
+      geodesic: true,
+      strokeColor: '#FF0000',
+      strokeOpacity: 1.0,
+      strokeWeight: 2
+    });
+    this.trajectory.setMap(this.map);
+
+    const controlsDiv = document.querySelector('.replay-controls') as HTMLElement;
+    if (controlsDiv) {
+      controlsDiv.style.display = 'block';
+    }
+  }
+
+  playReplay(): void {
+    console.log('playReplay');
+    // Add logic to continue the replay if paused
+  }
+
+  stopReplay(): void {
+    clearInterval(this.replayTimer);
+    this.replaying = false;
+  }
+
+  closeReplay(): void {
+    this.stopReplay();
+    if (this.trajectory) {
+      this.trajectory.setMap(null);
+      this.trajectory = null;
+    }
+    this.removeReplayMarker();
+    this.deviceService.getDevicesWithPositions().subscribe(data => {
+      this.devicesWithPositions = data;
+      this.initializeMarkers();
+    });
+    const controlsDiv = document.querySelector('.replay-controls') as HTMLElement;
+    if (controlsDiv) {
+      controlsDiv.style.display = 'none';
+    }
+  }
+
+  removeReplayMarker(): void {
+    if (this.replayMarker) {
+      this.replayMarker.map = null;
+      this.replayMarker = null;
+    }
+  }
+
+  startCar(deviceId: number, action: string): void {
     let test: Command = {
       deviceId: deviceId,
       type: action
     };
-    this.commandService.DispatchCommand(test).subscribe(res=>{
-    console.log("stoped");
+    this.commandService.DispatchCommand(test).subscribe(() => {
+      console.log("started");
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Engine Resumed', life: 3000 });
+    });
+  }
 
-    })
+  stopCar(deviceId: number, action: string): void {
+    let test: Command = {
+      deviceId: deviceId,
+      type: action
+    };
+    this.commandService.DispatchCommand(test).subscribe(res => {
+      console.log("stopped");
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Engine Stopped', life: 3000 });
+    });
   }
 
   onDeviceSelected(device: Device): void {
+    this.toggleDeviceList();
     const selectedDevice = this.devicesWithPositions.find(d => d.device.id === device.id);
     if (selectedDevice) {
       this.selectedDevice = selectedDevice;
@@ -327,6 +491,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (!this.isZooming) {
         this.smoothZoom(this.defaultZoom, () => {
           this.map?.panTo(this.center);
+          this.stopAutoFollow = true;
         });
       }
     }
@@ -339,7 +504,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const increment = targetZoom > currentZoom ? 1 : -2;  // Smaller increment for smoother zoom
+    const increment = targetZoom > currentZoom ? 1 : -2;
     this.isZooming = true;
     const interval = setInterval(() => {
       const newZoom = this.map.getZoom()! + increment;
@@ -350,7 +515,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isZooming = false;
         callback();
       }
-    }, 100);  // Faster interval for smoother effect
+    }, 100);
   }
 
   toggleDeviceList(): void {

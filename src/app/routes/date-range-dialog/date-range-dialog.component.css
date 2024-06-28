@@ -1,0 +1,72 @@
+.custom-dialog {
+  width: 800px;
+  height: 800px;
+  max-width: 500px; /* Adjust width as needed */
+  padding: 20px; /* Add padding for better layout */
+}
+
+.dialog-title {
+  margin-bottom: 20px; /* Space below the title */
+}
+
+.calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Space between calendar fields */
+}
+
+.p-fluid.p-formgrid.p-grid {
+  display: flex;
+  gap: 20px;
+}
+
+.p-field {
+  flex: 1; /* Make fields flexible to fill the container */
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px; /* Space between buttons */
+  margin-top: 20px; /* Space above the actions */
+}
+/* Custom styles for PrimeNG calendar to make it smaller */
+.p-calendar {
+  font-size: 12px; /* Adjust font size */
+}
+
+.p-calendar .p-inputtext {
+  padding: 4px; /* Adjust padding */
+}
+
+.p-calendar .p-datepicker {
+  width: 250px; /* Adjust width */
+  font-size: 12px; /* Adjust font size */
+}
+
+.p-calendar .p-datepicker-header {
+  padding: 4px; /* Adjust padding */
+}
+
+.p-calendar .p-datepicker-group .p-datepicker-header {
+  font-size: 12px; /* Adjust font size */
+}
+
+.p-calendar .p-datepicker .p-datepicker-next,
+.p-calendar .p-datepicker .p-datepicker-prev {
+  height: 24px; /* Adjust arrow button size */
+  width: 24px; /* Adjust arrow button size */
+}
+
+.p-calendar .p-datepicker-today,
+.p-calendar .p-datepicker-other-month,
+.p-calendar .p-datepicker-next-month,
+.p-calendar .p-datepicker-prev-month,
+.p-calendar .p-datepicker-current-day {
+  padding: 4px; /* Adjust padding for date cells */
+}
+
+.p-calendar .p-timepicker .p-button {
+  height: 24px; /* Adjust time picker button height */
+  width: 24px; /* Adjust time picker button width */
+}
