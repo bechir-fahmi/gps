@@ -10,7 +10,6 @@ import { MessageService } from 'primeng/api';
 import { MatDialog } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
 
-
 @Component({
   selector: 'app-map',
   templateUrl: './map.component.html',
@@ -42,6 +41,8 @@ export class MapComponent implements OnInit, AfterViewInit {
   trajectoryPolyline: google.maps.Polyline | null = null;
   trajectoryPath: google.maps.LatLngLiteral[] = [];
   polylines: Map<number, google.maps.Polyline> = new Map();
+  disableAutoFollow = false;
+
   constructor(private dialog: MatDialog,
     private deviceService: DeviceService,
     private mapsLoader: GoogleMapsLoaderService,
@@ -62,7 +63,6 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.devicesWithPositions = data;
       this.initializeMarkers();
 
-      // Listen for position updates
       this.deviceService.positions$.subscribe(positions => {
         this.updateMarkers(positions);
       });
@@ -83,7 +83,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           });
 
           dialogRef.afterClosed().subscribe(result => {
-            if (result&&this.selectedDevice) {
+            if (result && this.selectedDevice) {
               const { fromDate, toDate } = result;
               this.startReplay(this.selectedDevice.device.id, fromDate, toDate);
             }
@@ -110,6 +110,15 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.map.addListener('dragstart', () => {
         this.stopAutoFollow = true;
       });
+
+      // Add an event listener for zoom changes
+      this.map.addListener('zoom_changed', () => {
+        this.updateMarkerSize();
+      });
+
+      // Initial update of marker size based on the current zoom level
+      this.updateMarkerSize();
+
     }).catch(error => {
       console.error('Google Maps API loading error:', error);
     });
@@ -124,7 +133,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.devicesWithPositions.forEach(({ device, position }) => {
       this.addMarker(device, position);
 
-      // Create a new polyline for each device
       const polyline = new google.maps.Polyline({
         path: [new google.maps.LatLng(position.latitude, position.longitude)],
         geodesic: true,
@@ -136,7 +144,6 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.polylines.set(device.id, polyline);
     });
   }
-
 
   addMarker(device: Device, position: Position): void {
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
@@ -161,7 +168,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     icon.src = this.carIcon;
     icon.style.width = '50px';
     icon.style.height = '50px';
-    icon.style.transform = `rotate(${position.course}deg)`; // Rotate icon based on course
+    icon.style.transform = `rotate(${position.course}deg)`;
 
     wrapper.appendChild(nameElement);
     wrapper.appendChild(icon);
@@ -181,14 +188,13 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     this.markers.set(device.id, marker);
 
-    // Add to the polyline path
     const polyline = this.polylines.get(device.id);
     if (polyline) {
       const path = polyline.getPath();
       path.push(positionLatLng);
     }
+    this.updateMarkerSize();
   }
-
 
   updateMarkers(positions: Position[]): void {
     if (this.replaying) return;
@@ -210,7 +216,6 @@ export class MapComponent implements OnInit, AfterViewInit {
           }
         }
 
-        // Update the corresponding polyline path for the device
         const polyline = this.polylines.get(position.deviceId);
         if (polyline) {
           const path = polyline.getPath();
@@ -225,7 +230,6 @@ export class MapComponent implements OnInit, AfterViewInit {
         const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
         this.addMarker(device, position);
 
-        // Create a new polyline for the new marker
         const polyline = new google.maps.Polyline({
           path: [new google.maps.LatLng(position.latitude, position.longitude)],
           geodesic: true,
@@ -239,7 +243,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   removeAllMarkers(): void {
     this.markers.forEach(marker => {
       marker.map = null;
@@ -247,7 +250,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
     this.markers.clear();
 
-    // Clear all polylines
     this.polylines.forEach(polyline => polyline.setMap(null));
     this.polylines.clear();
   }
@@ -307,27 +309,19 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   startReplay(deviceId: number, from?: string, to?: string): void {
-    // if (this.replaying) {
-    //   this.stopReplay();
-    // }
     this.replaying = true;
     this.removeAllMarkers();
     this.clearReplay();
-    console.log(deviceId, from, to);
 
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
       if (positions.length > 0) {
-        // this.replaying = true;
-        // this.removeAllMarkers();
-        // this.displayTrajectory(positions);
+        this.displayTrajectory(positions);
 
         let index = 0;
         this.replayMarker = this.createReplayMarker(positions[0]);
         this.replayTimer = setInterval(() => {
           if (index < positions.length) {
             const position = positions[index];
-            this.center = { lat: position.latitude, lng: position.longitude };
-            this.map.panTo(this.center);
             this.updateReplayMarkerPosition(position);
             index++;
           } else {
@@ -381,7 +375,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     icon.src = this.carIcon;
     icon.style.width = '50px';
     icon.style.height = '50px';
-    icon.style.transform = `rotate(${position.course}deg)`; // Rotate icon based on course
+    icon.style.transform = `rotate(${position.course}deg)`;
 
     wrapper.appendChild(nameElement);
     wrapper.appendChild(icon);
@@ -420,6 +414,30 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
     this.trajectory.setMap(this.map);
 
+    this.trajectory.addListener('click', (event: google.maps.MapMouseEvent) => {
+      if (event.latLng) {
+        this.ngZone.run(() => {
+          const clickedLatLng = event.latLng;
+          const clickedIndex = positions.findIndex(pos => pos.latitude === clickedLatLng!.lat() && pos.longitude === clickedLatLng!.lng());
+          if (clickedIndex !== -1) {
+            this.stopReplay();
+            this.clearReplay();
+            this.replayMarker = this.createReplayMarker(positions[clickedIndex]);
+            let index = clickedIndex;
+            this.replayTimer = setInterval(() => {
+              if (index < positions.length) {
+                const position = positions[index];
+                this.updateReplayMarkerPosition(position);
+                index++;
+              } else {
+                this.stopReplay();
+              }
+            }, 1000);
+          }
+        });
+      }
+    });
+
     const controlsDiv = document.querySelector('.replay-controls') as HTMLElement;
     if (controlsDiv) {
       controlsDiv.style.display = 'block';
@@ -428,7 +446,6 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   playReplay(): void {
     console.log('playReplay');
-    // Add logic to continue the replay if paused
   }
 
   stopReplay(): void {
@@ -483,6 +500,9 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   onDeviceSelected(device: Device): void {
+    if(this.replayMarker){
+      this.closeReplay();
+    }
     this.toggleDeviceList();
     const selectedDevice = this.devicesWithPositions.find(d => d.device.id === device.id);
     if (selectedDevice) {
@@ -526,5 +546,19 @@ export class MapComponent implements OnInit, AfterViewInit {
     if (this.selectedDevice) {
       this.startReplay(this.selectedDevice.device.id, this.fromDate, this.toDate);
     }
+  }
+
+  updateMarkerSize(): void {
+    const zoomLevel = this.map.getZoom() || this.zoom;
+    this.markers.forEach(marker => {
+      if (marker.content instanceof HTMLElement) {
+        const icon = marker.content.querySelector('img');
+        if (icon) {
+          const size = Math.max(20, Math.min(50, zoomLevel * 3)); // Adjust size formula as needed
+          icon.style.width = `${size}px`;
+          icon.style.height = `${size}px`;
+        }
+      }
+    });
   }
 }
