@@ -1,17 +1,26 @@
 <div class="map-container">
-  <p-toast />
+  <p-toast></p-toast>
   <button class="toggle-button" (click)="toggleDeviceList()">☰</button>
   <div class="device-list-container" [class.open]="deviceListOpen">
     <button class="close-button" (click)="toggleDeviceList()">✖</button>
-    <app-device-list (deviceSelected)="onDeviceSelected($event)"></app-device-list>
+    <app-device-list [devices]="devices" (deviceSelected)="onDeviceSelected($event)"></app-device-list>
   </div>
-  <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%">
-
-   </google-map>
-   <div class="replay-controls" style="display: none;">
-    <p-button (click)="playReplay()" label="Play"/>
-    <p-button (click)="stopReplay()" label="Stop"/>
-    <p-button (click)="closeReplay()" label="Close"/>
-
+  <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%"></google-map>
+  <app-replay-controls *ngIf="replaying" (stop)="stopReplay()" (play)="playReplay()" (close)="closeReplay()" (dateRangeChanged)="updateReplayDates($event)"></app-replay-controls>
+  <div id="speedometer-container" *ngIf="replaying">
+    <ngx-gauge
+      [value]="speed"
+      [min]="0"
+      [max]="200"
+      [type]="'arch'"
+      [cap]="'butt'"
+      [size]="200"
+      [thick]="12"
+      [label]="'Speed (km/h)'"
+      [foregroundColor]="'#FF0000'"
+      [backgroundColor]="'#E0E0E0'">
+    </ngx-gauge>
+    <div >{{ currentDatetime }}</div>
   </div>
+
 </div>

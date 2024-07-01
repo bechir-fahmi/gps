@@ -42,6 +42,9 @@ export class MapComponent implements OnInit, AfterViewInit {
   trajectoryPath: google.maps.LatLngLiteral[] = [];
   polylines: Map<number, google.maps.Polyline> = new Map();
   disableAutoFollow = false;
+  isPlaying = false;
+  speed: number = 0;
+  currentDatetime: string = '';
 
   constructor(private dialog: MatDialog,
     private deviceService: DeviceService,
@@ -122,6 +125,10 @@ export class MapComponent implements OnInit, AfterViewInit {
     }).catch(error => {
       console.error('Google Maps API loading error:', error);
     });
+  }
+
+  get devices(): Device[] {
+    return this.devicesWithPositions.map(d => d.device);
   }
 
   initializeMarkers(): void {
@@ -310,8 +317,8 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   startReplay(deviceId: number, from?: string, to?: string): void {
     this.replaying = true;
+    this.clearReplay(); // Ensure we clear the previous trajectory and markers
     this.removeAllMarkers();
-    this.clearReplay();
 
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
       if (positions.length > 0) {
@@ -323,6 +330,8 @@ export class MapComponent implements OnInit, AfterViewInit {
           if (index < positions.length) {
             const position = positions[index];
             this.updateReplayMarkerPosition(position);
+            this.speed = position.speed!;
+            this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
             index++;
           } else {
             this.stopReplay();
@@ -342,15 +351,17 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.replayMarker = null;
     }
 
-    if (this.trajectoryPolyline) {
-      this.trajectoryPolyline.setMap(null);
-      this.trajectoryPolyline = null;
+    if (this.trajectory) {
+      this.trajectory.setMap(null);
+      this.trajectory = null;
     }
 
     if (this.replayTimer) {
       clearTimeout(this.replayTimer);
       this.replayTimer = null;
     }
+
+    this.currentDatetime = ''; // Clear the date and time display
   }
 
   createReplayMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
@@ -391,7 +402,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   updateReplayMarkerPosition(position: Position): void {
     if (this.replayMarker) {
-      const newPosition = { lat: position.latitude, lng: position.longitude };
+      const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
       this.replayMarker.position = newPosition;
 
       if (this.replayMarker.content instanceof HTMLElement) {
@@ -400,6 +411,8 @@ export class MapComponent implements OnInit, AfterViewInit {
           icon.style.transform = `rotate(${position.course}deg)`;
         }
       }
+
+      this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
     }
   }
 
@@ -428,6 +441,8 @@ export class MapComponent implements OnInit, AfterViewInit {
               if (index < positions.length) {
                 const position = positions[index];
                 this.updateReplayMarkerPosition(position);
+                this.speed = position.speed!;
+                this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
                 index++;
               } else {
                 this.stopReplay();
@@ -437,23 +452,43 @@ export class MapComponent implements OnInit, AfterViewInit {
         });
       }
     });
-
-    const controlsDiv = document.querySelector('.replay-controls') as HTMLElement;
-    if (controlsDiv) {
-      controlsDiv.style.display = 'block';
-    }
   }
 
   playReplay(): void {
-    console.log('playReplay');
+    if (this.replayMarker && this.trajectory) {
+      this.isPlaying = true;
+      let index = this.trajectory.getPath().getArray().findIndex(latlng =>
+        latlng.lat() === this.replayMarker!.position!.lat && latlng.lng() === this.replayMarker!.position!.lng
+      );
+      if (index === -1) index = 0; // Start from the beginning if the marker is not on the path
+      const positions = this.trajectory.getPath().getArray().map(latlng => ({
+        latitude: latlng.lat(),
+        longitude: latlng.lng(),
+        deviceTime: new Date(), // Use current time for demo purposes
+        deviceId: this.selectedDevice!.device.id // Ensure deviceId is set correctly
+      } as Position));
+      this.replayTimer = setInterval(() => {
+        if (index < positions.length) {
+          const position = positions[index];
+          this.updateReplayMarkerPosition(position);
+          this.speed = position.speed!;
+          this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
+          index++;
+        } else {
+          this.stopReplay();
+        }
+      }, 1000);
+    }
   }
 
   stopReplay(): void {
     clearInterval(this.replayTimer);
-    this.replaying = false;
+    this.replayTimer = null;
+    this.isPlaying = false;
   }
 
   closeReplay(): void {
+    this.replaying = false;
     this.stopReplay();
     if (this.trajectory) {
       this.trajectory.setMap(null);
@@ -464,10 +499,6 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.devicesWithPositions = data;
       this.initializeMarkers();
     });
-    const controlsDiv = document.querySelector('.replay-controls') as HTMLElement;
-    if (controlsDiv) {
-      controlsDiv.style.display = 'none';
-    }
   }
 
   removeReplayMarker(): void {
@@ -527,7 +558,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     const increment = targetZoom > currentZoom ? 1 : -2;
     this.isZooming = true;
     const interval = setInterval(() => {
-      const newZoom = this.map.getZoom()! + increment;
+      const newZoom = (this.map.getZoom() || 0) + increment;
       this.map.setZoom(newZoom);
 
       if ((increment > 0 && newZoom >= targetZoom) || (increment < 0 && newZoom <= targetZoom)) {
@@ -542,7 +573,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.deviceListOpen = !this.deviceListOpen;
   }
 
-  updateReplayDates(): void {
+  updateReplayDates(newDates: { fromDate: string, toDate: string }): void {
+    this.fromDate = newDates.fromDate;
+    this.toDate = newDates.toDate;
     if (this.selectedDevice) {
       this.startReplay(this.selectedDevice.device.id, this.fromDate, this.toDate);
     }
@@ -560,5 +593,9 @@ export class MapComponent implements OnInit, AfterViewInit {
         }
       }
     });
+  }
+
+  formatDatetime(date?: Date): string {
+    return date ? new Date(date).toLocaleString() : '';
   }
 }

@@ -31,6 +31,9 @@ import { MatDialogModule } from '@angular/material/dialog';
 
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { DateRangeDialogComponent } from './routes/date-range-dialog/date-range-dialog.component';
+
+
+import { NgxGaugeModule } from 'ngx-gauge';
 export function initializeApp(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -66,6 +69,7 @@ export function initializeApp(googleMapsLoader: GoogleMapsLoaderService): () => 
     MatInputModule,
     MatButtonModule,
     MatDialogModule,
+    NgxGaugeModule
 
   ],
   providers: [{

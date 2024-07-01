@@ -153,3 +153,46 @@ google-map {
   height: 100%;
   position: relative;
 }
+
+.replay-controls {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+.replay-controls .p-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#speedometer-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9); /* Add background to improve visibility */
+  padding: 15px; /* Add padding for better spacing */
+  border-radius: 5px; /* Add border radius for better visual appearance */
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Add shadow for better visual appearance */
+}
+
+#datetime-container {
+  position: absolute;
+  top: 40px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9); /* Add background to improve visibility */
+  padding: 10px; /* Add padding for better spacing */
+  border-radius: 5px; /* Add border radius for better visual appearance */
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Add shadow for better visual appearance */
+  font-size: 16px;
+  font-weight: bold;
+}
