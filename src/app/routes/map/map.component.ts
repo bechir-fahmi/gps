@@ -45,8 +45,10 @@ export class MapComponent implements OnInit, AfterViewInit {
   isPlaying = false;
   speed: number = 0;
   currentDatetime: string = '';
+  private animationFrameId: number | null = null;
 
-  constructor(private dialog: MatDialog,
+  constructor(
+    private dialog: MatDialog,
     private deviceService: DeviceService,
     private mapsLoader: GoogleMapsLoaderService,
     private ngZone: NgZone,
@@ -326,21 +328,25 @@ export class MapComponent implements OnInit, AfterViewInit {
 
         let index = 0;
         this.replayMarker = this.createReplayMarker(positions[0]);
-        this.replayTimer = setInterval(() => {
-          if (index < positions.length) {
-            const position = positions[index];
-            this.updateReplayMarkerPosition(position);
-            this.speed = position.speed!;
-            this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
-            index++;
+        const animateMarker = () => {
+          if (index < positions.length - 1) {
+            const start = positions[index];
+            const end = positions[index + 1];
+            const duration = 1000; // Duration in ms for each segment
+            this.animateMarkerPosition(start, end, duration, () => {
+              this.speed = end.speed!;
+              this.currentDatetime = this.formatDatetime(end.deviceTime); // Update the date and time
+              index++;
+              this.animationFrameId = requestAnimationFrame(animateMarker);
+            });
           } else {
             this.stopReplay();
           }
-        }, 1000);
+        };
+        this.animationFrameId = requestAnimationFrame(animateMarker);
       } else {
         this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
         this.replaying = false;
-        return;
       }
     });
   }
@@ -356,9 +362,9 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.trajectory = null;
     }
 
-    if (this.replayTimer) {
-      clearTimeout(this.replayTimer);
-      this.replayTimer = null;
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
     }
 
     this.currentDatetime = ''; // Clear the date and time display
@@ -416,6 +422,29 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
   }
 
+  animateMarkerPosition(start: Position, end: Position, duration: number, callback: () => void): void {
+    const startLatLng = new google.maps.LatLng(start.latitude, start.longitude);
+    const endLatLng = new google.maps.LatLng(end.latitude, end.longitude);
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / duration, 1);
+
+      const lat = startLatLng.lat() + (endLatLng.lat() - startLatLng.lat()) * progress;
+      const lng = startLatLng.lng() + (endLatLng.lng() - startLatLng.lng()) * progress;
+      this.updateReplayMarkerPosition({ ...start, latitude: lat, longitude: lng });
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        callback();
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }
+
   displayTrajectory(positions: Position[]): void {
     const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
     this.trajectory = new google.maps.Polyline({
@@ -437,17 +466,22 @@ export class MapComponent implements OnInit, AfterViewInit {
             this.clearReplay();
             this.replayMarker = this.createReplayMarker(positions[clickedIndex]);
             let index = clickedIndex;
-            this.replayTimer = setInterval(() => {
-              if (index < positions.length) {
-                const position = positions[index];
-                this.updateReplayMarkerPosition(position);
-                this.speed = position.speed!;
-                this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
-                index++;
+            const animateMarker = () => {
+              if (index < positions.length - 1) {
+                const start = positions[index];
+                const end = positions[index + 1];
+                const duration = 1000; // Duration in ms for each segment
+                this.animateMarkerPosition(start, end, duration, () => {
+                  this.speed = end.speed!;
+                  this.currentDatetime = this.formatDatetime(end.deviceTime); // Update the date and time
+                  index++;
+                  this.animationFrameId = requestAnimationFrame(animateMarker);
+                });
               } else {
                 this.stopReplay();
               }
-            }, 1000);
+            };
+            this.animationFrameId = requestAnimationFrame(animateMarker);
           }
         });
       }
@@ -467,17 +501,22 @@ export class MapComponent implements OnInit, AfterViewInit {
         deviceTime: new Date(), // Use current time for demo purposes
         deviceId: this.selectedDevice!.device.id // Ensure deviceId is set correctly
       } as Position));
-      this.replayTimer = setInterval(() => {
-        if (index < positions.length) {
-          const position = positions[index];
-          this.updateReplayMarkerPosition(position);
-          this.speed = position.speed!;
-          this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
-          index++;
+      const animateMarker = () => {
+        if (index < positions.length - 1) {
+          const start = positions[index];
+          const end = positions[index + 1];
+          const duration = 1000; // Duration in ms for each segment
+          this.animateMarkerPosition(start, end, duration, () => {
+            this.speed = end.speed!;
+            this.currentDatetime = this.formatDatetime(end.deviceTime); // Update the date and time
+            index++;
+            this.animationFrameId = requestAnimationFrame(animateMarker);
+          });
         } else {
           this.stopReplay();
         }
-      }, 1000);
+      };
+      this.animationFrameId = requestAnimationFrame(animateMarker);
     }
   }
 
@@ -485,6 +524,10 @@ export class MapComponent implements OnInit, AfterViewInit {
     clearInterval(this.replayTimer);
     this.replayTimer = null;
     this.isPlaying = false;
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
   }
 
   closeReplay(): void {
@@ -531,7 +574,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   onDeviceSelected(device: Device): void {
-    if(this.replayMarker){
+    if (this.replayMarker) {
       this.closeReplay();
     }
     this.toggleDeviceList();
