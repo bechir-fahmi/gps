@@ -458,8 +458,9 @@ export class MapComponent implements OnInit, AfterViewInit {
 
       const icon = document.createElement('img');
       icon.src = this.parkingIcon;
-      icon.style.width = '50px';
-      icon.style.height = '50px';
+      icon.style.width = '20px';
+      icon.style.height = '20px';
+      icon.className = 'parking-marker'; // Add a class name for parking markers
 
       wrapper.appendChild(icon);
 
@@ -607,9 +608,14 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (marker.content instanceof HTMLElement) {
         const icon = marker.content.querySelector('img');
         if (icon) {
-          const size = Math.max(20, Math.min(50, zoomLevel * 3)); // Adjust size formula as needed
-          icon.style.width = `${size}px`;
-          icon.style.height = `${size}px`;
+          if (icon.classList.contains('parking-marker')) {
+            icon.style.width = `20px`;
+            icon.style.height = `20px`;
+          } else {
+            const size = Math.max(20, Math.min(50, zoomLevel * 3)); // Adjust size formula as needed
+            icon.style.width = `${size}px`;
+            icon.style.height = `${size}px`;
+          }
         }
       }
     });
