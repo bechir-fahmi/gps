@@ -9,6 +9,7 @@ import { Command } from '../../shared/models/command';
 import { MessageService } from 'primeng/api';
 import { MatDialog } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
+import { ParkingDetectionService } from '../../Services/parking/parking-detection.service';
 
 @Component({
   selector: 'app-map',
@@ -28,6 +29,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   markers: Map<number, google.maps.marker.AdvancedMarkerElement> = new Map();
   mapId: string = "bdf0595e5330a4d";
   carIcon: string = '../../../assets/images/icons8-voiture-50.png';
+  parkingIcon: string = 'https://t4.ftcdn.net/jpg/01/92/38/33/360_F_192383331_4RSRvuUk5OQ0Td04bRGkGw1VJ4PO9lW3.jpg';
   infoWindow!: google.maps.InfoWindow;
   isZooming = false;
   deviceListOpen = false;
@@ -46,6 +48,9 @@ export class MapComponent implements OnInit, AfterViewInit {
   speed: number = 0;
   currentDatetime: string = '';
   private animationFrameId: number | null = null;
+  private replayInterval: number = 1000; // Milliseconds between each replay step
+  private currentReplayIndex: number = 0;
+  private parkingMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
 
   constructor(
     private dialog: MatDialog,
@@ -53,7 +58,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     private mapsLoader: GoogleMapsLoaderService,
     private ngZone: NgZone,
     private commandService: CommandsService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private parkingDetectionService: ParkingDetectionService // Inject ParkingDetectionService
   ) {
     const today = new Date();
     const lastWeek = new Date(today);
@@ -324,29 +330,17 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
       if (positions.length > 0) {
+        const parkings = this.parkingDetectionService.findTourParkings(positions);
         this.displayTrajectory(positions);
-
-        let index = 0;
+        this.displayParkingMarkers(parkings);
+        this.currentReplayIndex = 0;
         this.replayMarker = this.createReplayMarker(positions[0]);
-        const animateMarker = () => {
-          if (index < positions.length - 1) {
-            const start = positions[index];
-            const end = positions[index + 1];
-            const duration = 1000; // Duration in ms for each segment
-            this.animateMarkerPosition(start, end, duration, () => {
-              this.speed = end.speed!;
-              this.currentDatetime = this.formatDatetime(end.deviceTime); // Update the date and time
-              index++;
-              this.animationFrameId = requestAnimationFrame(animateMarker);
-            });
-          } else {
-            this.stopReplay();
-          }
-        };
-        this.animationFrameId = requestAnimationFrame(animateMarker);
+        this.isPlaying = true;
+        this.animateReplay(positions);
       } else {
         this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
         this.replaying = false;
+        return;
       }
     });
   }
@@ -368,6 +362,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
 
     this.currentDatetime = ''; // Clear the date and time display
+    this.clearParkingMarkers(); // Clear parking markers
   }
 
   createReplayMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
@@ -422,29 +417,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
   }
 
-  animateMarkerPosition(start: Position, end: Position, duration: number, callback: () => void): void {
-    const startLatLng = new google.maps.LatLng(start.latitude, start.longitude);
-    const endLatLng = new google.maps.LatLng(end.latitude, end.longitude);
-    const startTime = performance.now();
-
-    const animate = (currentTime: number) => {
-      const elapsedTime = currentTime - startTime;
-      const progress = Math.min(elapsedTime / duration, 1);
-
-      const lat = startLatLng.lat() + (endLatLng.lat() - startLatLng.lat()) * progress;
-      const lng = startLatLng.lng() + (endLatLng.lng() - startLatLng.lng()) * progress;
-      this.updateReplayMarkerPosition({ ...start, latitude: lat, longitude: lng });
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        callback();
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }
-
   displayTrajectory(positions: Position[]): void {
     const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
     this.trajectory = new google.maps.Polyline({
@@ -465,64 +437,68 @@ export class MapComponent implements OnInit, AfterViewInit {
             this.stopReplay();
             this.clearReplay();
             this.replayMarker = this.createReplayMarker(positions[clickedIndex]);
-            let index = clickedIndex;
-            const animateMarker = () => {
-              if (index < positions.length - 1) {
-                const start = positions[index];
-                const end = positions[index + 1];
-                const duration = 1000; // Duration in ms for each segment
-                this.animateMarkerPosition(start, end, duration, () => {
-                  this.speed = end.speed!;
-                  this.currentDatetime = this.formatDatetime(end.deviceTime); // Update the date and time
-                  index++;
-                  this.animationFrameId = requestAnimationFrame(animateMarker);
-                });
-              } else {
-                this.stopReplay();
-              }
-            };
-            this.animationFrameId = requestAnimationFrame(animateMarker);
+            this.currentReplayIndex = clickedIndex;
+            this.isPlaying = true;
+            this.animateReplay(positions);
           }
         });
       }
     });
   }
 
+  displayParkingMarkers(parkings: any): void {
+    parkings.forEach((parking: any) => {
+      const positionLatLng = new google.maps.LatLng(parking.latitude, parking.longitude);
+
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      wrapper.style.display = 'flex';
+      wrapper.style.flexDirection = 'column';
+      wrapper.style.alignItems = 'center';
+
+      const icon = document.createElement('img');
+      icon.src = this.parkingIcon;
+      icon.style.width = '50px';
+      icon.style.height = '50px';
+
+      wrapper.appendChild(icon);
+
+      const parkingMarker = new google.maps.marker.AdvancedMarkerElement({
+        map: this.map,
+        position: positionLatLng,
+        content: wrapper,
+      });
+
+      this.parkingMarkers.push(parkingMarker);
+    });
+  }
+
+  clearParkingMarkers(): void {
+    this.parkingMarkers.forEach(marker => {
+      marker.map = null;
+    });
+    this.parkingMarkers = [];
+  }
+
   playReplay(): void {
-    if (this.replayMarker && this.trajectory) {
+    if (this.replayMarker && this.trajectory && !this.isPlaying) {
       this.isPlaying = true;
-      let index = this.trajectory.getPath().getArray().findIndex(latlng =>
-        latlng.lat() === this.replayMarker!.position!.lat && latlng.lng() === this.replayMarker!.position!.lng
-      );
-      if (index === -1) index = 0; // Start from the beginning if the marker is not on the path
       const positions = this.trajectory.getPath().getArray().map(latlng => ({
         latitude: latlng.lat(),
         longitude: latlng.lng(),
         deviceTime: new Date(), // Use current time for demo purposes
         deviceId: this.selectedDevice!.device.id // Ensure deviceId is set correctly
       } as Position));
-      const animateMarker = () => {
-        if (index < positions.length - 1) {
-          const start = positions[index];
-          const end = positions[index + 1];
-          const duration = 1000; // Duration in ms for each segment
-          this.animateMarkerPosition(start, end, duration, () => {
-            this.speed = end.speed!;
-            this.currentDatetime = this.formatDatetime(end.deviceTime); // Update the date and time
-            index++;
-            this.animationFrameId = requestAnimationFrame(animateMarker);
-          });
-        } else {
-          this.stopReplay();
-        }
-      };
-      this.animationFrameId = requestAnimationFrame(animateMarker);
+
+      if (this.currentReplayIndex === positions.length) {
+        this.currentReplayIndex = 0; // Restart if at the end
+      }
+
+      this.animateReplay(positions);
     }
   }
 
   stopReplay(): void {
-    clearInterval(this.replayTimer);
-    this.replayTimer = null;
     this.isPlaying = false;
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
@@ -538,6 +514,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.trajectory = null;
     }
     this.removeReplayMarker();
+    this.clearParkingMarkers();
     this.deviceService.getDevicesWithPositions().subscribe(data => {
       this.devicesWithPositions = data;
       this.initializeMarkers();
@@ -574,7 +551,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   onDeviceSelected(device: Device): void {
-    if (this.replayMarker) {
+    if(this.replayMarker){
       this.closeReplay();
     }
     this.toggleDeviceList();
@@ -640,5 +617,54 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   formatDatetime(date?: Date): string {
     return date ? new Date(date).toLocaleString() : '';
+  }
+
+  animateReplay(positions: Position[]): void {
+    if (this.currentReplayIndex >= positions.length) {
+      this.isPlaying = false;
+      return;
+    }
+
+    const start = positions[this.currentReplayIndex];
+    const end = positions[this.currentReplayIndex + 1];
+
+    if (!end) {
+      this.isPlaying = false;
+      return;
+    }
+
+    const duration = this.replayInterval;
+    const stepTime = 50; // Time in ms between each step of animation
+    const steps = duration / stepTime;
+    const latStep = (end.latitude - start.latitude) / steps;
+    const lngStep = (end.longitude - start.longitude) / steps;
+
+    let stepCount = 0;
+
+    const step = () => {
+      if (stepCount < steps) {
+        const newLat = start.latitude + latStep * stepCount;
+        const newLng = start.longitude + lngStep * stepCount;
+        this.updateReplayMarkerPosition({
+          ...start,
+          latitude: newLat,
+          longitude: newLng
+        });
+        stepCount++;
+        this.animationFrameId = requestAnimationFrame(step);
+      } else {
+        this.currentReplayIndex++;
+        this.updateReplayMarkerPosition(end);
+        this.updateSpeedAndTime(end);
+        this.animateReplay(positions);
+      }
+    };
+
+    step();
+  }
+
+  updateSpeedAndTime(position: Position): void {
+    this.speed = position.speed!;
+    this.currentDatetime = this.formatDatetime(position.deviceTime);
   }
 }
