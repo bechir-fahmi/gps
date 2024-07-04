@@ -292,7 +292,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     const data = await response.json();
     let address = '';
     if (data.status === 'OK' && data.results.length > 0) {
-      address = data.results[0].formatted_address;
+      address = this.getFormattedAddress(data);
     } else {
       address = 'Address not found';
     }
@@ -703,13 +703,36 @@ export class MapComponent implements OnInit, AfterViewInit {
       console.log("data", data);
 
       if (data.status === 'OK' && data.results.length > 0) {
-        parking.address = data.results[4].formatted_address;
+        parking.address = this.getFormattedAddress(data);
       } else {
         parking.address = 'Address not found';
       }
     }
   }
 
+   getFormattedAddress(data: { results: any; }) {
+    const results = data.results;
+
+    for (const result of results) {
+        if (result.types.includes('street_address')) {
+            return result.formatted_address;
+        }
+    }
+
+    for (const result of results) {
+        if (result.types.includes('administrative_area_level_3')) {
+            return result.formatted_address;
+        }
+    }
+
+    for (const result of results) {
+        if (result.types.includes('administrative_area_level_1')) {
+            return result.formatted_address;
+        }
+    }
+
+    return 'No address found for the specified types';
+}
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);
