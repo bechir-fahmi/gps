@@ -22,13 +22,13 @@
     </ngx-gauge>
     <div>{{ currentDatetime }}</div>
     <p-button class="toggle-history-button" (click)="toggleParkingHistory()" label="  {{ showParkingHistory ? 'Hide' : 'Show' }} Parking History"/>
-    <div *ngIf="showParkingHistory && parkingEvents.length > 0 ||replaying " class="parking-history">
+    <div *ngIf="(showParkingHistory && parkingEvents.length > 0 ) " class="parking-history">
       <h4>Parking Events:</h4>
       <ul>
         <li *ngFor="let parking of parkingEvents">
           <strong>Date:</strong> {{ parking.deviceTime }}<br>
           <strong>Location:</strong> {{ parking.address }}<br>
-          <strong>Duration:</strong> {{ parking.durationInMinutes }} minutes
+          <strong>Duration:</strong> {{ formatDuration(parking.durationInMinutes) }}
         </li>
       </ul>
     </div>

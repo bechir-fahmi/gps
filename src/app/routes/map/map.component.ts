@@ -703,10 +703,16 @@ export class MapComponent implements OnInit, AfterViewInit {
       console.log("data", data);
 
       if (data.status === 'OK' && data.results.length > 0) {
-        parking.address = data.results[0].formatted_address;
+        parking.address = data.results[4].formatted_address;
       } else {
         parking.address = 'Address not found';
       }
     }
+  }
+
+  formatDuration(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    return hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}` : `${mins} minute${mins > 1 ? 's' : ''}`;
   }
 }
