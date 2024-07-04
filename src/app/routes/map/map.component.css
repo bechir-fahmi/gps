@@ -196,3 +196,29 @@ google-map {
   font-size: 16px;
   font-weight: bold;
 }
+.parking-history {
+  margin-top: 20px;
+}
+
+.parking-history h4 {
+  margin: 0 0 10px 0;
+}
+
+.parking-history ul {
+  list-style: none;
+  padding: 0;
+}
+
+.parking-history li {
+  margin-bottom: 10px;
+}
+
+.reading-block {
+  position: absolute;
+  width: 100%;
+  font-weight: 400;
+  white-space: nowrap;
+  text-align: center;
+  overflow: visible;
+  text-overflow: ellipsis;
+}
