@@ -21,8 +21,8 @@
       [backgroundColor]="'#E0E0E0'">
     </ngx-gauge>
     <div>{{ currentDatetime }}</div>
-    <p-button class="toggle-history-button" (click)="toggleParkingHistory()" label="  {{ showParkingHistory ? 'Hide' : 'Show' }} Parking History"/>
-    <div *ngIf="(showParkingHistory && parkingEvents.length > 0 ) " class="parking-history">
+    <p-button *ngIf="parkingEvents.length > 0" class="toggle-history-button" (click)="toggleParkingHistory()" label="  {{ showParkingHistory ? 'Hide' : 'Show' }} Parking History"/>
+    <div *ngIf="(showParkingHistory && parkingEvents.length > 0 )" class="parking-history">
       <h4>Parking Events:</h4>
       <ul>
         <li *ngFor="let parking of parkingEvents">

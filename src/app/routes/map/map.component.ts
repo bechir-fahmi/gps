@@ -521,6 +521,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   closeReplay(): void {
     this.replaying = false;
+    this.following = false;
     this.stopReplay();
     if (this.trajectory) {
       this.trajectory.setMap(null);
