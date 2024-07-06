@@ -10,6 +10,7 @@ import { MessageService } from 'primeng/api';
 import { MatDialog } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
 import { ParkingDetectionService } from '../../Services/parking/parking-detection.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-map',
@@ -54,7 +55,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   private parkingMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
   parkingEvents: any[] = []; // Store parking events
   showParkingHistory = true; // Show or hide parking history
-  private apiKey: string = 'AIzaSyDS5UbPHEoKmTSGLtRLBzbSclyaV-lufcI';
+  private apiKey: string = environment.googleMapsApiKey;
 
   constructor(
     private dialog: MatDialog,

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GoogleMapsLoaderService {
-  private apiKey: string = 'AIzaSyDS5UbPHEoKmTSGLtRLBzbSclyaV-lufcI';
+  private apiKey: string = environment.googleMapsApiKey;
   private isLoaded = false;
 
   constructor() { }
