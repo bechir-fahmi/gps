@@ -6,7 +6,7 @@ import { DeviceService } from '../../Services/device/device.service';
 import { GoogleMapsLoaderService } from '../../Services/google-map-loader/google-maps-loader.service';
 import { CommandsService } from '../../Services/commands/commands.service';
 import { Command } from '../../shared/models/command';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { MatDialog } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
 import { ParkingDetectionService } from '../../Services/parking/parking-detection.service';
@@ -64,6 +64,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     private ngZone: NgZone,
     private commandService: CommandsService,
     private messageService: MessageService,
+    private confirmationService: ConfirmationService,
     private parkingDetectionService: ParkingDetectionService // Inject ParkingDetectionService
   ) {
     const today = new Date();
@@ -548,9 +549,28 @@ export class MapComponent implements OnInit, AfterViewInit {
       deviceId: deviceId,
       type: action
     };
-    this.commandService.DispatchCommand(test).subscribe(() => {
-      console.log("started");
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Engine Resumed', life: 3000 });
+
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to start the car?',
+      header: 'Start Car Confirmation',
+      icon: 'pi pi-info-circle',
+      accept: () => {
+        this.commandService.DispatchCommand(test).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Command sent successfully' });
+          },
+          error: (error) => {
+            console.error('Failed to send command:', error);
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to send command' });
+          },
+          complete: () => {
+            console.log('DispatchCommand complete');
+          }
+        });
+      },
+      reject: () => {
+        this.messageService.add({ severity: 'info', summary: 'Cancelled', detail: 'You have cancelled the operation' });
+      }
     });
   }
 
@@ -559,12 +579,30 @@ export class MapComponent implements OnInit, AfterViewInit {
       deviceId: deviceId,
       type: action
     };
-    this.commandService.DispatchCommand(test).subscribe(res => {
-      console.log("stopped");
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Engine Stopped', life: 3000 });
+
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to stop the car?',
+      header: 'Stop Car Confirmation',
+      icon: 'pi pi-info-circle',
+      accept: () => {
+        this.commandService.DispatchCommand(test).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Command sent successfully' });
+          },
+          error: (error) => {
+            console.error('Failed to send command:', error);
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to send command' });
+          },
+          complete: () => {
+            console.log('DispatchCommand complete');
+          }
+        });
+      },
+      reject: () => {
+        this.messageService.add({ severity: 'info', summary: 'Cancelled', detail: 'You have cancelled the operation' });
+      }
     });
   }
-
   onDeviceSelected(device: Device): void {
     if (this.replayMarker) {
       this.closeReplay();
