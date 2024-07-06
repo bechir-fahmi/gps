@@ -1,6 +1,8 @@
 export const environment = {
   production: false,
   API:'http://75.119.145.194:8082',
+  firebaseApiKey: "AIzaSyAXMyCRnsyEaDYPwIe2XIQizlufMvseXEU",
+  //didnt work event here
   firebaseConfig: {
     projectId: "foodme-36aed",
     appId: "1:1047853031946:web:48bd1c317dcb31943235f3",
