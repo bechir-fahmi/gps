@@ -1,3 +1,4 @@
+// src/app/app.module.ts
 import { APP_INITIALIZER, CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -21,24 +22,21 @@ import { ToastModule } from 'primeng/toast';
 import { ReplayControlsComponent } from './routes/replay-controls/replay-controls.component';
 import { CalendarModule } from 'primeng/calendar';
 
-
 // Angular Material components and modules
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
-
-
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { DateRangeDialogComponent } from './routes/date-range-dialog/date-range-dialog.component';
-
-
 import { NgxGaugeModule } from 'ngx-gauge';
-export function initializeApp(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
+import { environment } from '../environments/environment';
+import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
+import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
-@NgModule({
 
+@NgModule({
   declarations: [
     AppComponent,
     MapComponent,
@@ -47,7 +45,6 @@ export function initializeApp(googleMapsLoader: GoogleMapsLoaderService): () => 
     DeviceCardComponent,
     ReplayControlsComponent,
     DateRangeDialogComponent
-
   ],
   imports: [
     BrowserModule,
@@ -69,21 +66,24 @@ export function initializeApp(googleMapsLoader: GoogleMapsLoaderService): () => 
     MatInputModule,
     MatButtonModule,
     MatDialogModule,
-    NgxGaugeModule
+    NgxGaugeModule,
+    //error handling module need to be fixed soon :/
+    // provideFirebaseApp(() => initializeApp(environment.firebase)),
+    // provideFirestore(() => getFirestore())
 
   ],
-  providers: [{
-    provide: APP_INITIALIZER,
-    useFactory: initializeApp,
-    deps: [GoogleMapsLoaderService],
-    multi: true
-  },
-  {
-    provide: HTTP_INTERCEPTORS,
-    useClass: AuthInterceptor,
-    multi: true
-  },
-  provideAnimationsAsync()
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeGoogleMaps,
+      deps: [GoogleMapsLoaderService],
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    },
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent]
