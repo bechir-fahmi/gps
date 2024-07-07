@@ -6,6 +6,7 @@
     <app-device-list [devices]="devices" (deviceSelected)="onDeviceSelected($event)"></app-device-list>
   </div>
   <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%"></google-map>
+  <p-confirmDialog></p-confirmDialog>
   <app-replay-controls *ngIf="replaying" (stop)="stopReplay()" (play)="playReplay()" (close)="closeReplay()" (dateRangeChanged)="updateReplayDates($event)"></app-replay-controls>
   <div id="speedometer-container" *ngIf="replaying || following">
     <ngx-gauge

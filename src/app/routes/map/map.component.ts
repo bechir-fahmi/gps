@@ -16,7 +16,7 @@ import { environment } from '../../../environments/environment';
   selector: 'app-map',
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.css'],
-  providers: [MessageService]
+  providers: [MessageService,ConfirmationService]
 })
 export class MapComponent implements OnInit, AfterViewInit {
   @ViewChild('mapElement', { static: false }) mapElement!: GoogleMap;
@@ -545,7 +545,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   startCar(deviceId: number, action: string): void {
-    let test: Command = {
+      let test: Command = {
       deviceId: deviceId,
       type: action
     };

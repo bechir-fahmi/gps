@@ -29,9 +29,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from './routes/date-range-dialog/date-range-dialog.component';
 import { NgxGaugeModule } from 'ngx-gauge';
-import { environment } from '../environments/environment';
-import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+// import { environment } from '../environments/environment';
+// import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
+// import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -67,6 +69,7 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     MatButtonModule,
     MatDialogModule,
     NgxGaugeModule,
+    ConfirmDialogModule,
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())
