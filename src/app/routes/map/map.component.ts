@@ -1,5 +1,3 @@
-// src/app/map/map.component.ts
-
 import { Component, OnInit, ViewChild, AfterViewInit, NgZone } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { Position } from '../../shared/models/position';
@@ -37,7 +35,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   isZooming = false;
   deviceListOpen = false;
   replaying = false;
-  following = false;  // New state to track if a device is being followed
+  following = false;
   trajectory: google.maps.Polyline | null = null;
   replayTimer: any;
   stopAutoFollow = false;
@@ -52,11 +50,12 @@ export class MapComponent implements OnInit, AfterViewInit {
   speed: number = 0;
   currentDatetime: string = '';
   private animationFrameId: number | null = null;
-  private replayInterval: number = 3000; // Milliseconds between each replay step
+  private replayInterval: number = 3000;
   private currentReplayIndex: number = 0;
   private parkingMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
-  parkingEvents: any[] = []; // Store parking events
-  showParkingHistory = true; // Show or hide parking history
+  private trajectoryMarkers: google.maps.Marker[] = []; // Add this to track trajectory markers
+  parkingEvents: any[] = [];
+  showParkingHistory = true;
   private apiKey: string = environment.googleMapsApiKey;
 
   constructor(
@@ -67,7 +66,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     private commandService: CommandsService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-    private parkingDetectionService: ParkingDetectionService // Inject ParkingDetectionService
+    private parkingDetectionService: ParkingDetectionService
   ) {
     const today = new Date();
     const lastWeek = new Date(today);
@@ -130,12 +129,10 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.stopAutoFollow = true;
       });
 
-      // Add an event listener for zoom changes
       this.map.addListener('zoom_changed', () => {
         this.updateMarkerSize();
       });
 
-      // Initial update of marker size based on the current zoom level
       this.updateMarkerSize();
 
     }).catch(error => {
@@ -338,7 +335,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   startReplay(deviceId: number, from?: string, to?: string): void {
     this.replaying = true;
-    this.clearReplay(); // Ensure we clear the previous trajectory and markers
+    this.clearReplay();
     this.removeAllMarkers();
 
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
@@ -351,10 +348,8 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isPlaying = true;
         this.animateReplay(positions);
 
-        // Store parking events
         this.parkingEvents = parkings;
         this.getParkingAddresses();
-        // Change map position to the first replay marker
         this.map.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
       } else {
         this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
@@ -380,9 +375,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.animationFrameId = null;
     }
 
-    this.currentDatetime = ''; // Clear the date and time display
-    this.clearParkingMarkers(); // Clear parking markers
-    this.parkingEvents = []; // Clear parking events
+    this.currentDatetime = '';
+    this.clearParkingMarkers();
+    this.parkingEvents = [];
+    this.clearTrajectoryMarkers(); // Clear trajectory markers when replay is cleared
   }
 
   createReplayMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
@@ -433,7 +429,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         }
       }
 
-      this.updateSpeedAndTime(position); // Update the speed and time display
+      this.updateSpeedAndTime(position);
     }
   }
 
@@ -448,9 +444,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
     this.trajectory.setMap(this.map);
 
-    // Display points as blue circles
     positions.forEach(pos => {
-      new google.maps.Marker({
+      const marker = new google.maps.Marker({
         position: { lat: pos.latitude, lng: pos.longitude },
         map: this.map,
         icon: {
@@ -461,6 +456,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           strokeWeight: 0,
         },
       });
+      this.trajectoryMarkers.push(marker); // Store the marker in the array
     });
 
     this.trajectory.addListener('click', (event: google.maps.MapMouseEvent) => {
@@ -481,6 +477,13 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
+  clearTrajectoryMarkers(): void {
+    this.trajectoryMarkers.forEach(marker => {
+      marker.setMap(null);
+    });
+    this.trajectoryMarkers = [];
+  }
+
   displayParkingMarkers(parkings: any): void {
     parkings.forEach((parking: any) => {
       const positionLatLng = new google.maps.LatLng(parking.latitude, parking.longitude);
@@ -495,7 +498,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       icon.src = this.parkingIcon;
       icon.style.width = '20px';
       icon.style.height = '20px';
-      icon.className = 'parking-marker'; // Add a class name for parking markers
+      icon.className = 'parking-marker';
 
       wrapper.appendChild(icon);
 
@@ -522,8 +525,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       const positions = this.trajectory.getPath().getArray().map(latlng => ({
         latitude: latlng.lat(),
         longitude: latlng.lng(),
-        deviceTime: new Date(), // Use current time for demo purposes
-        deviceId: this.selectedDevice!.device.id // Ensure deviceId is set correctly
+        deviceTime: new Date(),
+        deviceId: this.selectedDevice!.device.id
       } as Position));
 
       this.animateReplay(positions, this.currentReplayIndex);
@@ -548,6 +551,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
     this.removeReplayMarker();
     this.clearParkingMarkers();
+    this.clearTrajectoryMarkers(); // Clear trajectory markers when replay is closed
     this.deviceService.getDevicesWithPositions().subscribe(data => {
       this.devicesWithPositions = data;
       this.initializeMarkers();
@@ -636,7 +640,6 @@ export class MapComponent implements OnInit, AfterViewInit {
           this.stopAutoFollow = true;
         });
       }
-      // Start following and display gauge
       this.following = true;
       this.updateSpeedAndTime(selectedDevice.position);
     }
@@ -689,7 +692,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             icon.style.width = `20px`;
             icon.style.height = `20px`;
           } else {
-            const size = Math.max(20, Math.min(50, zoomLevel * 3)); // Adjust size formula as needed
+            const size = Math.max(20, Math.min(50, zoomLevel * 3));
             icon.style.width = `${size}px`;
             icon.style.height = `${size}px`;
           }
@@ -717,7 +720,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
 
     const duration = this.replayInterval;
-    const stepTime = 50; // Time in ms between each step of animation
+    const stepTime = 50;
     const steps = duration / stepTime;
     const latStep = (end.latitude - start.latitude) / steps;
     const lngStep = (end.longitude - start.longitude) / steps;
@@ -725,7 +728,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     let stepCount = 0;
 
     const step = () => {
-      if (!this.isPlaying) return; // Exit if replay is stopped
+      if (!this.isPlaying) return;
 
       if (stepCount < steps) {
         const newLat = start.latitude + latStep * stepCount;
@@ -749,7 +752,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   updateSpeedAndTime(position: Position): void {
-    this.speed = position.speed! * 1.852; // Convert knots to km/h
+    this.speed = position.speed! * 1.852;
     this.currentDatetime = this.formatDatetime(position.deviceTime);
   }
 
