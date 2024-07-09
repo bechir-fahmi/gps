@@ -1,3 +1,5 @@
+// src/app/map/map.component.ts
+
 import { Component, OnInit, ViewChild, AfterViewInit, NgZone } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { Position } from '../../shared/models/position';
@@ -16,7 +18,7 @@ import { environment } from '../../../environments/environment';
   selector: 'app-map',
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.css'],
-  providers: [MessageService,ConfirmationService]
+  providers: [MessageService, ConfirmationService]
 })
 export class MapComponent implements OnInit, AfterViewInit {
   @ViewChild('mapElement', { static: false }) mapElement!: GoogleMap;
@@ -431,7 +433,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         }
       }
 
-      this.currentDatetime = this.formatDatetime(position.deviceTime); // Update the date and time
+      this.updateSpeedAndTime(position); // Update the speed and time display
     }
   }
 
@@ -446,6 +448,21 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
     this.trajectory.setMap(this.map);
 
+    // Display points as blue circles
+    positions.forEach(pos => {
+      new google.maps.Marker({
+        position: { lat: pos.latitude, lng: pos.longitude },
+        map: this.map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 5,
+          fillColor: '#0000FF',
+          fillOpacity: 1,
+          strokeWeight: 0,
+        },
+      });
+    });
+
     this.trajectory.addListener('click', (event: google.maps.MapMouseEvent) => {
       if (event.latLng) {
         this.ngZone.run(() => {
@@ -457,7 +474,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             this.replayMarker = this.createReplayMarker(positions[clickedIndex]);
             this.currentReplayIndex = clickedIndex;
             this.isPlaying = true;
-            this.animateReplay(positions);
+            this.animateReplay(positions, this.currentReplayIndex);
           }
         });
       }
@@ -545,7 +562,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   startCar(deviceId: number, action: string): void {
-      let test: Command = {
+    let command: Command = {
       deviceId: deviceId,
       type: action
     };
@@ -555,7 +572,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       header: 'Start Car Confirmation',
       icon: 'pi pi-info-circle',
       accept: () => {
-        this.commandService.DispatchCommand(test).subscribe({
+        this.commandService.DispatchCommand(command).subscribe({
           next: () => {
             this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Command sent successfully' });
           },
@@ -575,7 +592,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   stopCar(deviceId: number, action: string): void {
-    let test: Command = {
+    let command: Command = {
       deviceId: deviceId,
       type: action
     };
@@ -585,7 +602,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       header: 'Stop Car Confirmation',
       icon: 'pi pi-info-circle',
       accept: () => {
-        this.commandService.DispatchCommand(test).subscribe({
+        this.commandService.DispatchCommand(command).subscribe({
           next: () => {
             this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Command sent successfully' });
           },
@@ -603,6 +620,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
+
   onDeviceSelected(device: Device): void {
     if (this.replayMarker) {
       this.closeReplay();
@@ -620,8 +638,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
       // Start following and display gauge
       this.following = true;
-      this.speed = selectedDevice.position.speed! * 1.852;
-      this.currentDatetime = this.formatDatetime(selectedDevice.position.deviceTime);
+      this.updateSpeedAndTime(selectedDevice.position);
     }
   }
 
@@ -732,7 +749,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   updateSpeedAndTime(position: Position): void {
-    this.speed = position.speed! * 1.852; // conv knot to km/h
+    this.speed = position.speed! * 1.852; // Convert knots to km/h
     this.currentDatetime = this.formatDatetime(position.deviceTime);
   }
 
@@ -750,29 +767,30 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
   }
 
-   getFormattedAddress(data: { results: any; }) {
+  getFormattedAddress(data: { results: any; }) {
     const results = data.results;
 
     for (const result of results) {
-        if (result.types.includes('street_address')) {
-            return result.formatted_address;
-        }
+      if (result.types.includes('street_address')) {
+        return result.formatted_address;
+      }
     }
 
     for (const result of results) {
-        if (result.types.includes('administrative_area_level_3')) {
-            return result.formatted_address;
-        }
+      if (result.types.includes('administrative_area_level_3')) {
+        return result.formatted_address;
+      }
     }
 
     for (const result of results) {
-        if (result.types.includes('administrative_area_level_1')) {
-            return result.formatted_address;
-        }
+      if (result.types.includes('administrative_area_level_1')) {
+        return result.formatted_address;
+      }
     }
 
     return 'No address found for the specified types';
-}
+  }
+
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);
