@@ -794,6 +794,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     return 'No address found for the specified types';
   }
 
+
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);
