@@ -184,6 +184,14 @@ google-map {
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 768px) {
+  #speedometer-container {
+    top: 10px;
+    right: 10px;
+    padding: 10px;
+  }
+}
+
 #datetime-container {
   position: absolute;
   top: 40px;
@@ -214,4 +222,16 @@ google-map {
 
 .parking-history li {
   margin-bottom: 10px;
+}
+.loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  text-align: center;
 }

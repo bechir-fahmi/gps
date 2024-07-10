@@ -3,7 +3,7 @@
   <button class="toggle-button" (click)="toggleDeviceList()">☰</button>
   <div class="device-list-container" [class.open]="deviceListOpen">
     <button class="close-button" (click)="toggleDeviceList()">✖</button>
-    <app-device-list [devices]="devices" (deviceSelected)="onDeviceSelected($event)"></app-device-list>
+    <app-device-list #deviceList [devices]="devices" (deviceSelected)="onDeviceSelected($event)"></app-device-list>
   </div>
   <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%"></google-map>
   <p-confirmDialog></p-confirmDialog>
@@ -22,16 +22,9 @@
       [backgroundColor]="'#E0E0E0'">
     </ngx-gauge>
     <div>{{ currentDatetime }}</div>
-    <p-button *ngIf="parkingEvents.length > 0" class="toggle-history-button" (click)="toggleParkingHistory()" label="  {{ showParkingHistory ? 'Hide' : 'Show' }} Parking History"/>
-    <div *ngIf="(showParkingHistory && parkingEvents.length > 0 )" class="parking-history">
-      <h4>Parking Events:</h4>
-      <ul>
-        <li *ngFor="let parking of parkingEvents">
-          <strong>Date:</strong> {{ parking.deviceTime }}<br>
-          <strong>Location:</strong> {{ parking.address }}<br>
-          <strong>Duration:</strong> {{ formatDuration(parking.durationInMinutes) }}
-        </li>
-      </ul>
-    </div>
+  </div>
+  <div *ngIf="loading" class="loading-indicator">
+    <p-progressSpinner ariaLabel="loading"></p-progressSpinner>
+    <p>Loading...</p>
   </div>
 </div>

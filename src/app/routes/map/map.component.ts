@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit, NgZone } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, NgZone, HostListener } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { Position } from '../../shared/models/position';
 import { GoogleMap } from '@angular/google-maps';
@@ -11,6 +11,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
 import { ParkingDetectionService } from '../../Services/parking/parking-detection.service';
 import { environment } from '../../../environments/environment';
+import { DeviceListComponent } from '../device-list/device-list.component';
 
 @Component({
   selector: 'app-map',
@@ -20,10 +21,10 @@ import { environment } from '../../../environments/environment';
 })
 export class MapComponent implements OnInit, AfterViewInit {
   @ViewChild('mapElement', { static: false }) mapElement!: GoogleMap;
-
+  @ViewChild('deviceList') deviceListComponent!: DeviceListComponent;
   devicesWithPositions: { device: Device, position: Position }[] = [];
   center: google.maps.LatLngLiteral = { lat: 36.8448198, lng: 10.0297012 };
-  zoom = 4;
+  zoom = 8;
   defaultZoom = 15;
   selectedDevice: { device: Device, position: Position } | null = null;
   map!: google.maps.Map;
@@ -57,6 +58,9 @@ export class MapComponent implements OnInit, AfterViewInit {
   parkingEvents: any[] = [];
   showParkingHistory = true;
   private apiKey: string = environment.googleMapsApiKey;
+  loading = false;
+  gaugeSize: number=200;
+  gaugeThickness: number=12;
 
   constructor(
     private dialog: MatDialog,
@@ -77,6 +81,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.updateGaugeSize();
     this.deviceService.getDevicesWithPositions().subscribe(data => {
       this.devicesWithPositions = data;
       this.initializeMarkers();
@@ -87,6 +92,21 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
+  @HostListener('window:resize')
+  onResize() {
+    this.updateGaugeSize();
+  }
+
+  updateGaugeSize() {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 768) {
+      this.gaugeSize = screenWidth * 0.2; // 50% of screen width on mobile
+      this.gaugeThickness = 6; // thinner gauge on mobile
+    } else {
+      this.gaugeSize = 200; // default size
+      this.gaugeThickness = 12; // default thickness
+    }
+  }
   ngAfterViewInit(): void {
     this.mapsLoader.load().then(() => {
       this.map = this.mapElement.googleMap!;
@@ -152,19 +172,27 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     this.devicesWithPositions.forEach(({ device, position }) => {
       this.addMarker(device, position);
-
-      const polyline = new google.maps.Polyline({
-        path: [new google.maps.LatLng(position.latitude, position.longitude)],
-        geodesic: true,
-        strokeColor: '#FF0000',
-        strokeOpacity: 1.0,
-        strokeWeight: 2
-      });
-      polyline.setMap(this.map);
-      this.polylines.set(device.id, polyline);
+      this.addTrajectoryMarker(position); // Add this line to add trajectory markers
     });
   }
 
+  addTrajectoryMarker(position: Position): void {
+    const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
+
+    const marker = new google.maps.Marker({
+      position: positionLatLng,
+      map: this.map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 5,
+        fillColor: '#0000FF',
+        fillOpacity: 1,
+        strokeWeight: 0,
+      },
+    });
+
+    this.trajectoryMarkers.push(marker); // Store the marker in the array
+  }
   addMarker(device: Device, position: Position): void {
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
 
@@ -218,6 +246,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   updateMarkers(positions: Position[]): void {
     if (this.replaying) return;
+
     positions.forEach(position => {
       const marker = this.markers.get(position.deviceId);
       if (marker) {
@@ -236,11 +265,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           }
         }
 
-        const polyline = this.polylines.get(position.deviceId);
-        if (polyline) {
-          const path = polyline.getPath();
-          path.push(newPosition);
-        }
+        this.addTrajectoryMarker(position); // Add this line to add trajectory markers
 
         if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId && !this.stopAutoFollow) {
           this.center = { lat: position.latitude, lng: position.longitude };
@@ -249,16 +274,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       } else {
         const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
         this.addMarker(device, position);
-
-        const polyline = new google.maps.Polyline({
-          path: [new google.maps.LatLng(position.latitude, position.longitude)],
-          geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 2
-        });
-        polyline.setMap(this.map);
-        this.polylines.set(position.deviceId, polyline);
+        this.addTrajectoryMarker(position); // Add this line to add trajectory markers
       }
     });
   }
@@ -334,6 +350,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   startReplay(deviceId: number, from?: string, to?: string): void {
+    this.loading = true;
     this.replaying = true;
     this.clearReplay();
     this.removeAllMarkers();
@@ -349,9 +366,12 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.animateReplay(positions);
 
         this.parkingEvents = parkings;
+        this.deviceListComponent.parkingEvents = parkings; // Pass parking events to DeviceListComponent
         this.getParkingAddresses();
         this.map.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
+        this.loading = false;
       } else {
+        this.loading = false;
         this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
         this.closeReplay();
         return;
@@ -517,6 +537,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       marker.map = null;
     });
     this.parkingMarkers = [];
+    this.deviceListComponent.parkingEvents = [];
   }
 
   playReplay(): void {
@@ -800,4 +821,5 @@ export class MapComponent implements OnInit, AfterViewInit {
     const mins = Math.floor(minutes % 60);
     return hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}` : `${mins} minute${mins > 1 ? 's' : ''}`;
   }
+
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { DeviceService } from '../../Services/device/device.service';
 
@@ -10,6 +10,7 @@ import { DeviceService } from '../../Services/device/device.service';
 export class DeviceListComponent implements OnInit {
   devices: Device[] = [];
 
+  @Input() parkingEvents: any[] = [];
   @Output() deviceSelected: EventEmitter<Device> = new EventEmitter<Device>();
 
   constructor(private deviceService: DeviceService) { }
@@ -26,5 +27,14 @@ export class DeviceListComponent implements OnInit {
 
   onDeviceClick(device: Device): void {
     this.deviceSelected.emit(device);
+  }
+
+  formatDuration(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    const secs = Math.floor((minutes * 60) % 60);
+    return hours > 0
+    ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`
+    : `${mins} minute${mins > 1 ? 's' : ''} ${secs} second${secs !== 1 ? 's' : ''}`;
   }
 }

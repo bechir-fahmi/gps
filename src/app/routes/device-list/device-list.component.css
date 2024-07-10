@@ -1,22 +1,46 @@
 .device-list {
-  width: 100%; /* Set width to 100% to make it responsive */
+  width: 100%;
   overflow-x: auto;
 }
 
-.device-list ul {
-  list-style: none;
-  padding: 0;
+.device-list h2 {
+  margin-top: 20px;
 }
+
+.device-list-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.device-list-item:hover {
+  background-color: #f0f0f0;
+}
+
 .device-icon {
-  margin-right: 10px; /* Add margin to separate the icon from the text */
+  margin-right: 10px;
   width: 40px;
   height: 40px;
 }
 
 .device-list-item span {
-  flex: 1; /* Allow the text to grow and take up remaining space */
+  flex: 1;
 }
-.device-list li {
+
+.parking-history {
+  margin-top: 10px;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.parking-history ul {
+  list-style: none;
+  padding: 0;
+}
+
+.parking-history li {
   margin-bottom: 10px;
   padding: 10px;
   border: 1px solid #ccc;
@@ -27,14 +51,3 @@
     padding: 5px;
   }
 }
-
-.device-list-item {
-  display: flex; /* Use flexbox to align icon and text horizontally */
-  align-items: center; /* Align items vertically within the container */
-  cursor: pointer; /* Set cursor to pointer to indicate clickable */
-}
-
-.device-list-item:hover {
-  background-color: #f0f0f0; /* Optionally change background color on hover */
-}
-
