@@ -6,7 +6,6 @@ import { LoginComponent } from './routes/login/login.component';
 import { DeviceCardComponent } from './routes/device-card/device-card.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'map', component: MapComponent },
   { path: 'device-list', component: DeviceListComponent },
