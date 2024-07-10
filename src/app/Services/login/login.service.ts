@@ -63,4 +63,8 @@ export class LoginService {
       })
     );
   }
+
+  isLoggedIn(): boolean {
+    return !!localStorage.getItem('tokenbasic');
+  }
 }
