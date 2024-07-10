@@ -8,7 +8,11 @@ import { environment } from '../../../environments/environment';
 export class ServerService {
 
   constructor(private _http: HttpClient) { }
-
+  /**
+   * A function that makes a GET request to the server API.
+   *
+   * @return {Observable<any>} the response from the server
+   */
   server() {
     return this._http.get(`${environment.API}/api/server`,{withCredentials:true})
   }

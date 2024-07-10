@@ -16,22 +16,36 @@ export class ReplayControlsComponent {
   isPlaying = true;
 
   constructor(private dialog: MatDialog) {}
-
+  /**
+   * A function to stop the replay.
+   *
+   */
   stopReplay() {
     this.isPlaying = false;
     this.stop.emit();
   }
-
+  /**
+   * Sets 'isPlaying' to true and emits the 'play' event.
+   *
+   * @return {void} No return value
+   */
   playReplay() {
     this.isPlaying = true;
     this.play.emit();
   }
-
+  /**
+   * Closes the replay by setting 'isPlaying' to false and emitting the 'close' event.
+   *
+   * @return {void} No return value
+   */
   closeReplay() {
     this.isPlaying = false;
     this.close.emit();
   }
-
+  /**
+   * Opens the date range dialog, allowing the user to select a date range.
+   *
+   */
   openDateRangeDialog() {
     const dialogRef = this.dialog.open(DateRangeDialogComponent, {
       width: 'auto',

@@ -9,7 +9,12 @@ import { environment } from '../../../environments/environment';
 export class CommandsService {
 
   constructor(private _http:HttpClient) { }
-
+/**
+ * Dispatches a command to the API.
+ *
+ * @param {Command} command - The command to be dispatched.
+ * @return {Observable<any>} An observable that emits the response from the API.
+ */
   DispatchCommand(command:Command){
     return this._http.post(`${environment.API}/api/commands/send`,command)
   }

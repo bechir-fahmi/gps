@@ -13,7 +13,12 @@ import { encodeBasicAuth } from '../../shared/util/auth-utils';
 })
 export class LoginService {
   constructor(private _http: HttpClient, private cookieService: CookieService) { }
-
+  /**
+   * Performs a login operation using the provided data.
+   *
+   * @param {LoginDTO} data - The data containing email or username and password for login.
+   * @return {Observable<HttpResponse<any>>} An observable of the HTTP response for the login operation.
+   */
   login(data: LoginDTO): Observable<HttpResponse<any>> {
     const params = new HttpParams()
       .set('email', data.email || data.username)
@@ -33,7 +38,11 @@ export class LoginService {
       })
     );
   }
-
+/**
+ * Logs the user out by sending a DELETE request to the API.
+ *
+ * @return {Observable<any>} An Observable that emits the result of the logout operation.
+ */
   logout(): Observable<any> {
     return this._http.delete(`${environment.API}/api/session`).pipe(
       tap(() => {
@@ -44,7 +53,11 @@ export class LoginService {
       })
     );
   }
-
+  /**
+   * Generates a token by sending a POST request to the API with the expiration date.
+   *
+   * @return {Observable<any>} An Observable that emits the generated token.
+   */
   tokenGenerator(): Observable<any> {
     const expiration = dayjs().add(6, 'months').toISOString();
     const body = new HttpParams().set('expiration', expiration);
@@ -63,7 +76,11 @@ export class LoginService {
       })
     );
   }
-
+  /**
+   * Checks if the user is currently logged in.
+   *
+   * @return {boolean} Returns true if the user is logged in, otherwise false.
+   */
   isLoggedIn(): boolean {
     return !!localStorage.getItem('tokenbasic');
   }

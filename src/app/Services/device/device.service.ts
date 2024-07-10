@@ -14,6 +14,12 @@ export class DeviceService {
   private positionsSubject = new BehaviorSubject<Position[]>([]);
   positions$ = this.positionsSubject.asObservable();
   data: any;
+  /**
+ * Initializes a new instance of the DeviceService class.
+ *
+ * @param {HttpClient} _http - The HttpClient instance.
+ * @param {WebsocketService} wsService - The WebsocketService instance.
+ */
   constructor(private _http: HttpClient, private wsService: WebsocketService) {
     // this.fetchInitialPositions();
     this.listenForPositionUpdates();
@@ -27,7 +33,12 @@ export class DeviceService {
   //     }
   //   });
   // }
-
+  /**
+   * Listens for position updates from the WebSocket service and emits the positions through the positionsSubject.
+   *
+   * @private
+   * @return {void}
+   */
   private listenForPositionUpdates() {
     this.wsService.messages$.pipe(
       filter(message => !!message.positions),
@@ -42,18 +53,11 @@ export class DeviceService {
       this.positionsSubject.next(message.positions);
     });
   }
-
-
-
-  // private fetchInitialPositions() {
-  //   this._http.get<Position[]>(`${environment.API}/api/positions`)
-  //     .pipe(
-  //       tap(positions => this.positionsSubject.next(positions)),
-  //       catchError(error => {
-  //         return throwError(() => error);
-  //       })
-  //     ).subscribe();
-  // }
+  /**
+   * A function that retrieves devices from the API.
+   *
+   * @return {Observable<Device[]>} Observable of Device array
+   */
   getDevices(): Observable<Device[]> {
     return this._http.get<Device[]>(`${environment.API}/api/devices`,
   )
@@ -63,7 +67,14 @@ export class DeviceService {
         })
       );
   }
-
+  /**
+   * Retrieves positions based on the provided device ID, 'from' date, and 'to' date.
+   *
+   * @param {number} deviceId - (Optional) The ID of the device.
+   * @param {string} from - (Optional) The start date for the query.
+   * @param {string} to - (Optional) The end date for the query.
+   * @return {Observable<Position[]>} An observable of position data.
+   */
   getPositions(deviceId?: number, from?: string, to?: string): Observable<Position[]> {
     let params =new HttpParams()
     if (deviceId !== undefined) {
@@ -83,7 +94,11 @@ export class DeviceService {
         })
       );
   }
-
+  /**
+   * Retrieves devices with their corresponding positions.
+   *
+   * @return {Observable<{ device: Device, position: Position }[]>} An Observable that emits an array of objects containing the device and its position.
+   */
   getDevicesWithPositions(): Observable<{ device: Device, position: Position }[]> {
     return this.positions$.pipe(
       filter(positions => positions.length > 0),

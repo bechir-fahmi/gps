@@ -11,7 +11,11 @@ export class WebsocketService {
   private socket$: WebSocketSubject<any>;
   private messagesSubject = new Subject<any>();
   messages$ = this.messagesSubject.asObservable();
-
+  /**
+   * Initializes a new instance of the WebsocketService class.
+   *
+   * @param {NgZone} ngZone - The NgZone service used for running tasks outside of Angular's zone.
+   */
   constructor(private ngZone: NgZone) {
     const token = localStorage.getItem('token');
     this.socket$ = webSocket(`${environment.API}/api/socket?token=${token}`);

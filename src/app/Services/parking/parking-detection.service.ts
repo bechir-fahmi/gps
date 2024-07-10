@@ -7,6 +7,12 @@ import { Position } from '../../shared/models/position';
 export class ParkingDetectionService {
 
   constructor() { }
+    /**
+   * Find parkings in the given tour based on specific conditions and calculate their details.
+   *
+   * @param {Position[]} tour - The tour positions to analyze for parkings.
+   * @return {Object[]} An array of parking objects with detailed information.
+   */
   findTourParkings(tour: Position[]) {
     let parkings: { position: Position; duration: number }[] = [];
     let parkingStartTime: number | null = null;

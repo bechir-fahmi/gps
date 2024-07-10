@@ -9,7 +9,11 @@ export class GoogleMapsLoaderService {
   private isLoaded = false;
 
   constructor() { }
-
+  /**
+   * Loads the Google Maps API asynchronously.
+   *
+   * @return {Promise<void>} A Promise that resolves when the Google Maps API is loaded successfully.
+   */
   load(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.isLoaded) {
