@@ -1,18 +1,32 @@
 .replay-controls {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 10px;
-  border-radius: 5px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
-
-.replay-controls .p-button {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
+}
+
+.replay-controls button {
+  background: #007bff;
+  border: none;
+  color: white;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.replay-controls button:hover {
+  background: #0056b3;
+}
+/*
+.seek-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seek-bar input[type="range"] {
+  flex-grow: 1;
+} */
+.replay-controls input[type="range"] {
+  flex: 1;
+  margin: 0 10px;
 }

@@ -1,4 +1,4 @@
-<div class="replay-controls">
+<!-- <div class="replay-controls">
   <button class="p-button p-component" (click)="openDateRangeDialog()">
     <span class="p-button-icon pi pi-calendar"></span>
   </button>
@@ -9,4 +9,16 @@
   <button class="p-button p-component" (click)="closeReplay()">
     <span class="p-button-icon pi pi-times-circle"></span>
   </button>
+</div> -->
+<div class="replay-controls">
+  <p-button (click)="onStop()" icon="pi pi-stop-circle" />
+  <p-button (click)="onPlay()" icon="pi pi-play-circle" />
+  <p-button (click)="onPause()" icon="pi pi-pause-circle" />
+  <p-button (click)="onForward()" icon="pi pi-forward" />
+  <p-button (click)="onRewind()" icon="pi pi-step-backward" />
+  <p-button (click)="onClose()" icon="pi pi-times-circle" />
+  <div class="seek-bar">
+    <input type="range" min="0" [max]="maxPosition" [(ngModel)]="currentPosition" (input)="onSeek()">
+    <div>{{formatTime(currentPosition)}} / {{formatTime(maxPosition)}}</div>
+  </div>
 </div>

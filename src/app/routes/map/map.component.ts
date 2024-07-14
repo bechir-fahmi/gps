@@ -44,36 +44,26 @@ export class MapComponent implements OnInit, AfterViewInit {
   toDate: string;
   replayMarker: google.maps.marker.AdvancedMarkerElement | null = null;
   trajectoryPolyline: google.maps.Polyline | null = null;
-  trajectoryPath: google.maps.LatLngLiteral[] = [];
+  trajectoryPath: Position[] = []; // Store full Position objects
   polylines: Map<number, google.maps.Polyline> = new Map();
   disableAutoFollow = false;
   isPlaying = false;
   speed: number = 0;
   currentDatetime: string = '';
+  maxReplayPosition: number = 0;
+  currentReplayPosition: number = 0;
   private animationFrameId: number | null = null;
   private replayInterval: number = 3000;
   private currentReplayIndex: number = 0;
   private parkingMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
-  private trajectoryMarkers: google.maps.Marker[] = []; // Add this to track trajectory markers
+  private trajectoryMarkers: google.maps.Marker[] = [];
   parkingEvents: any[] = [];
   showParkingHistory = true;
   private apiKey: string = environment.googleMapsApiKey;
   loading = false;
-  gaugeSize: number=200;
-  gaugeThickness: number=12;
-/**
- * Initializes a new instance of the class.
- *
- * @param {MatDialog} dialog - The dialog service.
- * @param {DeviceService} deviceService - The device service.
- * @param {GoogleMapsLoaderService} mapsLoader - The Google Maps loader service.
- * @param {NgZone} ngZone - The Angular zone service.
- * @param {CommandsService} commandService - The commands service.
- * @param {MessageService} messageService - The message service.
- * @param {ConfirmationService} confirmationService - The confirmation service.
- * @param {ParkingDetectionService} parkingDetectionService - The parking detection service.
- * @return {void}
- */
+  gaugeSize: number = 200;
+  gaugeThickness: number = 12;
+
   constructor(
     private dialog: MatDialog,
     private deviceService: DeviceService,
@@ -92,12 +82,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.toDate = today.toISOString().split('T')[0] + 'T23:59:59Z';
   }
 
-    /**
-   * Initializes the component and subscribes to the device service to get the devices with positions.
-   * Initializes the markers and subscribes to the device service positions$ to update the markers.
-   *
-   * @return {void} This function does not return anything.
-   */
   ngOnInit(): void {
     this.updateGaugeSize();
     this.deviceService.getDevicesWithPositions().subscribe(data => {
@@ -109,33 +93,23 @@ export class MapComponent implements OnInit, AfterViewInit {
       });
     });
   }
-  /**
-   * Updates the gauge size based on the current window size.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   @HostListener('window:resize')
   onResize() {
     this.updateGaugeSize();
   }
-  /**
-   * Updates the gauge size based on the screen width.
-   */
+
   updateGaugeSize() {
     const screenWidth = window.innerWidth;
     if (screenWidth < 768) {
-      this.gaugeSize = screenWidth * 0.2; // 50% of screen width on mobile
-      this.gaugeThickness = 6; // thinner gauge on mobile
+      this.gaugeSize = screenWidth * 0.2;
+      this.gaugeThickness = 6;
     } else {
-      this.gaugeSize = 200; // default size
-      this.gaugeThickness = 12; // default thickness
+      this.gaugeSize = 200;
+      this.gaugeThickness = 12;
     }
   }
-    /**
-   * Initializes the map component after the view is fully initialized.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   ngAfterViewInit(): void {
     this.mapsLoader.load().then(() => {
       this.map = this.mapElement.googleMap!;
@@ -183,24 +157,15 @@ export class MapComponent implements OnInit, AfterViewInit {
       });
 
       this.updateMarkerSize();
-
     }).catch(error => {
       console.error('Google Maps API loading error:', error);
     });
   }
-  /**
-   * Returns an array of devices by extracting the 'device' property from each element in the 'devicesWithPositions' array.
-   *
-   * @return {Device[]} An array of devices.
-   */
+
   get devices(): Device[] {
     return this.devicesWithPositions.map(d => d.device);
   }
-/**
- * Initializes the markers for the devices with positions.
- *
- * @return {void} This function does not return anything.
- */
+
   initializeMarkers(): void {
     if (!google.maps.marker.AdvancedMarkerElement) {
       console.error('AdvancedMarkerElement is not available. Ensure you have included the marker library in your Google Maps script.');
@@ -209,15 +174,10 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     this.devicesWithPositions.forEach(({ device, position }) => {
       this.addMarker(device, position);
-      this.addTrajectoryMarker(position); // Add this line to add trajectory markers
+      this.addTrajectoryMarker(position);
     });
   }
-  /**
-   * A description of the entire function.
-   *
-   * @param {Position} position - The position object to add a marker for
-   * @return {void} This function does not return anything
-   */
+
   addTrajectoryMarker(position: Position): void {
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
 
@@ -233,15 +193,9 @@ export class MapComponent implements OnInit, AfterViewInit {
       },
     });
 
-    this.trajectoryMarkers.push(marker); // Store the marker in the array
+    this.trajectoryMarkers.push(marker);
   }
-  /**
- * Adds a marker to the map with the provided device and position.
- *
- * @param {Device} device - The device object containing the device information.
- * @param {Position} position - The position object containing the latitude and longitude.
- * @return {void} This function does not return anything.
- */
+
   addMarker(device: Device, position: Position): void {
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
 
@@ -292,12 +246,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
     this.updateMarkerSize();
   }
-  /**
-   * Updates the markers on the map based on the provided positions.
-   *
-   * @param {Position[]} positions - An array of positions to update the markers.
-   * @return {void} This function does not return anything.
-   */
+
   updateMarkers(positions: Position[]): void {
     if (this.replaying) return;
 
@@ -319,7 +268,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           }
         }
 
-        this.addTrajectoryMarker(position); // Add this line to add trajectory markers
+        this.addTrajectoryMarker(position);
 
         if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId && !this.stopAutoFollow) {
           this.center = { lat: position.latitude, lng: position.longitude };
@@ -328,15 +277,11 @@ export class MapComponent implements OnInit, AfterViewInit {
       } else {
         const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
         this.addMarker(device, position);
-        this.addTrajectoryMarker(position); // Add this line to add trajectory markers
+        this.addTrajectoryMarker(position);
       }
     });
   }
-  /**
-   * Removes all markers from the map and clears the markers and polylines arrays.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   removeAllMarkers(): void {
     this.markers.forEach(marker => {
       marker.map = null;
@@ -347,14 +292,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.polylines.forEach(polyline => polyline.setMap(null));
     this.polylines.clear();
   }
-/**
- * Handles the click event on a marker.
- *
- * @param {Object} selectedDevice - The selected device object.
- * @param {Device} selectedDevice.device - The device object.
- * @param {Position} selectedDevice.position - The position object.
- * @return {Promise<void>} - A promise that resolves when the function completes.
- */
+
   async onMarkerClick(selectedDevice: { device: Device, position: Position }) {
     this.selectedDevice = selectedDevice;
     const position = { lat: selectedDevice.position.latitude, lng: selectedDevice.position.longitude };
@@ -413,14 +351,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.infoWindow.setContent(content);
     this.infoWindow.open(this.map);
   }
-  /**
-   * Initiates the replay process for a specific device based on the provided device ID and optional time range.
-   *
-   * @param {number} deviceId - The ID of the device for which to replay the positions.
-   * @param {string} [from] - Optional start time for the replay.
-   * @param {string} [to] - Optional end time for the replay.
-   * @return {void} This function does not return anything directly but initiates the replay process.
-   */
+
   startReplay(deviceId: number, from?: string, to?: string): void {
     this.loading = true;
     this.replaying = true;
@@ -435,10 +366,12 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.currentReplayIndex = 0;
         this.replayMarker = this.createReplayMarker(positions[0]);
         this.isPlaying = true;
-        this.animateReplay(positions);
+        this.maxReplayPosition = positions.length - 1;
+        this.trajectoryPath = positions; // Store full Position objects
+        this.animateReplay(this.trajectoryPath);
 
         this.parkingEvents = parkings;
-        this.deviceListComponent.parkingEvents = parkings; // Pass parking events to DeviceListComponent
+        this.deviceListComponent.parkingEvents = parkings;
         this.getParkingAddresses();
         this.map.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
         this.loading = false;
@@ -450,12 +383,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
-  /**
-   * Clears the replay by resetting marker, trajectory, animation frame, current date time,
-   * parking markers, parking events, and trajectory markers.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   clearReplay(): void {
     if (this.replayMarker) {
       this.replayMarker.map = null;
@@ -475,14 +403,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.currentDatetime = '';
     this.clearParkingMarkers();
     this.parkingEvents = [];
-    this.clearTrajectoryMarkers(); // Clear trajectory markers when replay is cleared
+    this.clearTrajectoryMarkers();
   }
-  /**
-   * Creates a replay marker on the map at the given position.
-   *
-   * @param {Position} position - The position object containing latitude and longitude.
-   * @return {google.maps.marker.AdvancedMarkerElement} The created replay marker.
-   */
+
   createReplayMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
     const positionLatLng = { lat: position.latitude, lng: position.longitude };
 
@@ -518,12 +441,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     return replayMarker;
   }
-  /**
-   * Updates the position of the replay marker based on the provided position.
-   *
-   * @param {Position} position - The position to update the replay marker to.
-   * @return {void} This function does not return anything.
-   */
+
   updateReplayMarkerPosition(position: Position): void {
     if (this.replayMarker) {
       const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
@@ -539,12 +457,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.updateSpeedAndTime(position);
     }
   }
-/**
- * Displays a trajectory on the map based on the provided positions.
- *
- * @param {Position[]} positions - An array of positions representing the trajectory.
- * @return {void} This function does not return anything.
- */
+
   displayTrajectory(positions: Position[]): void {
     const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
     this.trajectory = new google.maps.Polyline({
@@ -568,44 +481,35 @@ export class MapComponent implements OnInit, AfterViewInit {
           strokeWeight: 0,
         },
       });
-      this.trajectoryMarkers.push(marker); // Store the marker in the array
+      this.trajectoryMarkers.push(marker);
     });
 
     this.trajectory.addListener('click', (event: google.maps.MapMouseEvent) => {
       if (event.latLng) {
         this.ngZone.run(() => {
           const clickedLatLng = event.latLng;
-          const clickedIndex = positions.findIndex(pos => pos.latitude === clickedLatLng!.lat() && pos.longitude === clickedLatLng!.lng());
+          const clickedIndex = this.trajectoryPath.findIndex(pos => pos.latitude === clickedLatLng!.lat() && pos.longitude === clickedLatLng!.lng());
           if (clickedIndex !== -1) {
             this.stopReplay();
             this.clearReplay();
-            this.replayMarker = this.createReplayMarker(positions[clickedIndex]);
+            this.replayMarker = this.createReplayMarker(this.trajectoryPath[clickedIndex]);
             this.currentReplayIndex = clickedIndex;
+            this.currentReplayPosition = clickedIndex;
             this.isPlaying = true;
-            this.animateReplay(positions, this.currentReplayIndex);
+            this.animateReplay(this.trajectoryPath, this.currentReplayIndex);
           }
         });
       }
     });
   }
-  /**
-   * Clears the trajectory markers by setting the map property of each marker to null and
-   * emptying the trajectoryMarkers array.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   clearTrajectoryMarkers(): void {
     this.trajectoryMarkers.forEach(marker => {
       marker.setMap(null);
     });
     this.trajectoryMarkers = [];
   }
-  /**
-   * Displays parking markers on the map based on the provided parkings data.
-   *
-   * @param {any} parkings - The array of parking data to display markers for.
-   * @return {void} This function does not return anything.
-   */
+
   displayParkingMarkers(parkings: any): void {
     parkings.forEach((parking: any) => {
       const positionLatLng = new google.maps.LatLng(parking.latitude, parking.longitude);
@@ -633,11 +537,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.parkingMarkers.push(parkingMarker);
     });
   }
-/**
- * Clears all parking markers from the map and resets the parking markers array and parking events.
- *
- * @return {void} This function does not return anything.
- */
+
   clearParkingMarkers(): void {
     this.parkingMarkers.forEach(marker => {
       marker.map = null;
@@ -645,29 +545,50 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.parkingMarkers = [];
     this.deviceListComponent.parkingEvents = [];
   }
-  /**
-   * Plays the replay animation on the map if both the replay marker and trajectory are available.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   playReplay(): void {
     if (this.replayMarker && this.trajectory) {
       this.isPlaying = true;
-      const positions = this.trajectory.getPath().getArray().map(latlng => ({
-        latitude: latlng.lat(),
-        longitude: latlng.lng(),
-        deviceTime: new Date(),
-        deviceId: this.selectedDevice!.device.id
-      } as Position));
-
-      this.animateReplay(positions, this.currentReplayIndex);
+      this.animateReplay(this.trajectoryPath, this.currentReplayIndex);
     }
   }
-/**
- * Stops the replay by setting the `isPlaying` flag to `false` and canceling the animation frame if it exists.
- *
- * @return {void} This function does not return anything.
- */
+
+  pauseReplay(): void {
+    this.isPlaying = false;
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  }
+
+  forwardReplay(): void {
+    if (this.currentReplayIndex < this.trajectoryPath.length - 1) {
+      this.pauseReplay();
+      this.currentReplayIndex++;
+      this.currentReplayPosition = this.currentReplayIndex;
+      this.updateReplayMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
+    }
+  }
+
+  rewindReplay(): void {
+    if (this.currentReplayIndex > 0) {
+      this.pauseReplay();
+      this.currentReplayIndex--;
+      this.currentReplayPosition = this.currentReplayIndex;
+      this.updateReplayMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
+    }
+  }
+
+  seekReplay(positionIndex: number): void {
+    if (positionIndex >= 0 && positionIndex < this.trajectoryPath.length) {
+      this.pauseReplay();
+      this.currentReplayIndex = positionIndex;
+      this.currentReplayPosition = positionIndex;
+      this.updateReplayMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
+      this.playReplay();
+    }
+  }
+
   stopReplay(): void {
     this.isPlaying = false;
     if (this.animationFrameId) {
@@ -675,12 +596,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.animationFrameId = null;
     }
   }
-  /**
-   * Closes the replay functionality by stopping the replay, removing the trajectory,
-   * removing the replay marker, clearing parking markers, and refreshing the device markers.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   closeReplay(): void {
     this.replaying = false;
     this.following = false;
@@ -691,30 +607,20 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
     this.removeReplayMarker();
     this.clearParkingMarkers();
-    this.clearTrajectoryMarkers(); // Clear trajectory markers when replay is closed
+    this.clearTrajectoryMarkers();
     this.deviceService.getDevicesWithPositions().subscribe(data => {
       this.devicesWithPositions = data;
       this.initializeMarkers();
     });
   }
-  /**
-   * Removes the replay marker from the map and sets it to null.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   removeReplayMarker(): void {
     if (this.replayMarker) {
       this.replayMarker.map = null;
       this.replayMarker = null;
     }
   }
-/**
- * Starts a car by dispatching a command to the command service.
- *
- * @param {number} deviceId - The ID of the device to start.
- * @param {string} action - The action to perform.
- * @return {void} This function does not return anything.
- */
+
   startCar(deviceId: number, action: string): void {
     let command: Command = {
       deviceId: deviceId,
@@ -744,13 +650,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
-  /**
-   * Stops a car by dispatching a command to the command service.
-   *
-   * @param {number} deviceId - The ID of the device to stop.
-   * @param {string} action - The action to perform.
-   * @return {void} This function does not return anything.
-   */
+
   stopCar(deviceId: number, action: string): void {
     let command: Command = {
       deviceId: deviceId,
@@ -780,12 +680,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
-  /**
-   * A function that handles the selection of a device.
-   *
-   * @param {Device} device - The device object that is being selected.
-   * @return {void} This function does not return anything.
-   */
+
   onDeviceSelected(device: Device): void {
     if (this.replayMarker) {
       this.closeReplay();
@@ -805,13 +700,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.updateSpeedAndTime(selectedDevice.position);
     }
   }
-  /**
-   * Smoothly zooms the map to the target zoom level.
-   *
-   * @param {number} targetZoom - The target zoom level to which the map will smoothly zoom.
-   * @param {() => void} callback - The callback function to be executed after the zoom completes.
-   * @return {void} This function does not return anything.
-   */
+
   smoothZoom(targetZoom: number, callback: () => void): void {
     const currentZoom = this.map.getZoom() || this.zoom;
     if (currentZoom === targetZoom) {
@@ -832,30 +721,15 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     }, 100);
   }
-  /**
-   * Toggles the device list open/closed.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   toggleDeviceList(): void {
     this.deviceListOpen = !this.deviceListOpen;
   }
-  /**
-   * Toggles the visibility of the parking history.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   toggleParkingHistory(): void {
     this.showParkingHistory = !this.showParkingHistory;
   }
-/**
- * Updates the replay dates and starts the replay if a device is selected.
- *
- * @param {Object} newDates - The new replay dates.
- * @param {string} newDates.fromDate - The new start date.
- * @param {string} newDates.toDate - The new end date.
- * @return {void}
- */
+
   updateReplayDates(newDates: { fromDate: string, toDate: string }): void {
     this.fromDate = newDates.fromDate;
     this.toDate = newDates.toDate;
@@ -863,11 +737,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.startReplay(this.selectedDevice.device.id, this.fromDate, this.toDate);
     }
   }
-  /**
-   * Updates the size of markers based on the zoom level.
-   *
-   * @return {void} This function does not return anything.
-   */
+
   updateMarkerSize(): void {
     const zoomLevel = this.map.getZoom() || this.zoom;
     this.markers.forEach(marker => {
@@ -886,22 +756,11 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
-/**
- * Formats a given date to a localized string representation.
- *
- * @param {Date} [date] - The date to format. If not provided, an empty string is returned.
- * @return {string} The formatted date string.
- */
+
   formatDatetime(date?: Date): string {
     return date ? new Date(date).toLocaleString() : '';
   }
-/**
- * Animates the replay of a series of positions on a map.
- *
- * @param {Position[]} positions - The array of positions to animate.
- * @param {number} [startIndex=0] - The index of the position to start the animation from.
- * @return {void} This function does not return a value.
- */
+
   animateReplay(positions: Position[], startIndex: number = 0): void {
     if (startIndex >= positions.length) {
       this.isPlaying = false;
@@ -933,12 +792,14 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.updateReplayMarkerPosition({
           ...start,
           latitude: newLat,
-          longitude: newLng
+          longitude: newLng,
+          course: start.course
         });
         stepCount++;
         this.animationFrameId = requestAnimationFrame(step);
       } else {
         this.currentReplayIndex++;
+        this.currentReplayPosition = this.currentReplayIndex;
         this.updateReplayMarkerPosition(end);
         this.updateSpeedAndTime(end);
         this.animateReplay(positions, this.currentReplayIndex);
@@ -947,21 +808,12 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     step();
   }
-  /**
-   * Updates the speed and time based on the provided position.
-   *
-   * @param {Position} position - The position object containing speed and device time.
-   * @return {void} This function does not return anything.
-   */
+
   updateSpeedAndTime(position: Position): void {
-    this.speed = position.speed! * 1.852;
+    this.speed = position.speed ? position.speed * 1.852 : 0; // Convert knots to km/h
     this.currentDatetime = this.formatDatetime(position.deviceTime);
   }
-  /**
-   * Retrieves parking addresses from the Google Maps Geocoding API for each parking event in the list.
-   *
-   * @return {Promise<void>} This function does not return anything directly but updates the parking addresses.
-   */
+
   async getParkingAddresses(): Promise<void> {
     for (const parking of this.parkingEvents) {
       const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${parking.latitude},${parking.longitude}&key=${this.apiKey}`);
@@ -975,12 +827,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     }
   }
-  /**
-   * Retrieves a formatted address from the provided data based on specific types.
-   *
-   * @param {object} data - An object containing results from which to extract the address.
-   * @return {string} The formatted address corresponding to the specified types, or a default message if no address found.
-   */
+
   getFormattedAddress(data: { results: any; }) {
     const results = data.results;
 
@@ -1005,16 +852,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     return 'No address found for the specified types';
   }
 
-  /**
-   * Formats the given number of minutes into a human-readable duration string.
-   *
-   * @param {number} minutes - The number of minutes to format.
-   * @return {string} The formatted duration string.
-   */
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);
     return hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}` : `${mins} minute${mins > 1 ? 's' : ''}`;
   }
-
 }

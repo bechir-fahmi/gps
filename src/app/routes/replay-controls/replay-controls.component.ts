@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog.component';
 
@@ -8,39 +8,51 @@ import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog
   styleUrls: ['./replay-controls.component.css']
 })
 export class ReplayControlsComponent {
+
+  @Output() dateRangeChanged = new EventEmitter<{ fromDate: string, toDate: string }>();
   @Output() stop = new EventEmitter<void>();
   @Output() play = new EventEmitter<void>();
+  @Output() pause = new EventEmitter<void>();
+  @Output() forward = new EventEmitter<void>();
+  @Output() rewind = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
-  @Output() dateRangeChanged = new EventEmitter<{ fromDate: string, toDate: string }>();
-
-  isPlaying = true;
+  @Output() seek = new EventEmitter<number>();
+  @Input() maxPosition: number = 0;
+  @Input() currentPosition: number = 0;
 
   constructor(private dialog: MatDialog) {}
-  /**
-   * A function to stop the replay.
-   *
-   */
-  stopReplay() {
-    this.isPlaying = false;
+  onStop() {
     this.stop.emit();
   }
-  /**
-   * Sets 'isPlaying' to true and emits the 'play' event.
-   *
-   * @return {void} No return value
-   */
-  playReplay() {
-    this.isPlaying = true;
+
+  onPlay() {
     this.play.emit();
   }
-  /**
-   * Closes the replay by setting 'isPlaying' to false and emitting the 'close' event.
-   *
-   * @return {void} No return value
-   */
-  closeReplay() {
-    this.isPlaying = false;
+
+  onPause() {
+    this.pause.emit();
+  }
+
+  onForward() {
+    this.forward.emit();
+  }
+
+  onRewind() {
+    this.rewind.emit();
+  }
+
+  onClose() {
     this.close.emit();
+  }
+
+  onSeek() {
+    this.seek.emit(this.currentPosition);
+  }
+
+  formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   }
   /**
    * Opens the date range dialog, allowing the user to select a date range.
