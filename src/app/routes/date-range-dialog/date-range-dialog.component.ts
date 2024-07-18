@@ -7,16 +7,19 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
   styleUrls: ['./date-range-dialog.component.css']
 })
 export class DateRangeDialogComponent {
-  fromDate: Date|null;
-  toDate: Date|null;
+  fromDate: Date | null;
+  toDate: Date | null;
+  selectedOption: string | null = null;
+  showCustomDateRange = false;
+  isConfirmEnabled = false;
 
-    /**
-   * Constructs a new DateRangeDialogComponent.
-   *
-   * @param {MatDialogRef<DateRangeDialogComponent>} dialogRef - Reference to the dialog.
-   * @param {{ fromDate: string, toDate: string }} data - Object containing fromDate and toDate strings.
-   * @return {void} No return value
-   */
+  dateOptions = [
+    { label: 'Aujourd\'hui', value: 'today' },
+    { label: 'Hier', value: 'yesterday' },
+    { label: 'Cette semaine', value: 'thisWeek' },
+    { label: 'Personnaliser', value: 'custom' }
+  ];
+
   constructor(
     public dialogRef: MatDialogRef<DateRangeDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { fromDate: string, toDate: string }
@@ -25,32 +28,50 @@ export class DateRangeDialogComponent {
     this.toDate = data.toDate ? new Date(data.toDate) : null;
   }
 
-    /**
-   * A method that closes the dialog without any further action.
-   *
-   * @return {void} No return value
-   */
   onNoClick(): void {
     this.dialogRef.close();
   }
-  /**
-   * A method that closes the dialog with selected date range values.
-   *
-   * @return {void} No return value
-   */
+
   onConfirmClick(): void {
     this.dialogRef.close({
       fromDate: this.fromDate ? this.fromDate.toISOString() : '',
       toDate: this.toDate ? this.toDate.toISOString() : ''
     });
   }
-/**
- * Prevents the default behavior of an event and stops its propagation.
- *
- * @param {Event} event - The event object.
- * @return {void} This function does not return a value.
- */
+
   onCalendarClick(event: Event): void {
     event.stopPropagation();
+  }
+
+  onDateOptionChange(event: any): void {
+    this.showCustomDateRange = event.value === 'custom';
+    if (this.showCustomDateRange) {
+      this.isConfirmEnabled = !!this.fromDate && !!this.toDate;
+    } else {
+      this.setDateRange(event.value);
+      this.isConfirmEnabled = true;
+    }
+  }
+
+  setDateRange(option: string): void {
+    const today = new Date();
+    if (option === 'today') {
+      this.fromDate = new Date(today.setHours(0, 0, 0, 0));
+      this.toDate = new Date(today.setHours(23, 59, 59, 999));
+    } else if (option === 'yesterday') {
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      this.fromDate = new Date(yesterday.setHours(0, 0, 0, 0));
+      this.toDate = new Date(yesterday.setHours(23, 59, 59, 999));
+    } else if (option === 'thisWeek') {
+      const firstDayOfWeek = new Date(today);
+      firstDayOfWeek.setDate(today.getDate() - today.getDay() + 1);
+      this.fromDate = new Date(firstDayOfWeek.setHours(0, 0, 0, 0));
+      this.toDate = new Date(today.setHours(23, 59, 59, 999));
+    }
+  }
+
+  onDateChange(): void {
+    this.isConfirmEnabled = !!this.fromDate && !!this.toDate;
   }
 }

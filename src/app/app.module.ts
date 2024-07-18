@@ -34,6 +34,7 @@ import { NgxGaugeModule } from 'ngx-gauge';
 // import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { DropdownModule } from 'primeng/dropdown';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -70,7 +71,8 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     MatDialogModule,
     NgxGaugeModule,
     ConfirmDialogModule,
-    ProgressSpinnerModule
+    ProgressSpinnerModule,
+    DropdownModule
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())
