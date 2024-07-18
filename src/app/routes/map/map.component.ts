@@ -63,6 +63,8 @@ export class MapComponent implements OnInit, AfterViewInit {
   loading = false;
   gaugeSize: number = 200;
   gaugeThickness: number = 12;
+  private lastPanTime: number = 0;
+  private throttleDelay: number = 200; // Throttle delay in milliseconds
 
   constructor(
     private dialog: MatDialog,
@@ -357,6 +359,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.replaying = true;
     this.clearReplay();
     this.removeAllMarkers();
+    if (this.infoWindow) {
+      this.infoWindow.close(); // Close the info window when replay starts
+    }
 
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
       if (positions.length > 0) {
@@ -374,6 +379,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.deviceListComponent.parkingEvents = parkings;
         this.getParkingAddresses();
         this.map.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
+
         this.loading = false;
       } else {
         this.loading = false;
@@ -455,6 +461,19 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
 
       this.updateSpeedAndTime(position);
+      this.throttledPanToMarker(newPosition);
+    }
+  }
+
+  throttledPanToMarker(position: google.maps.LatLng): void {
+    const now = Date.now();
+    if (now - this.lastPanTime >= this.throttleDelay) {
+      this.lastPanTime = now;
+      if (this.map) {
+        this.map.panTo(position);
+      } else {
+        console.error('Map is not defined.');
+      }
     }
   }
 
@@ -463,8 +482,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.trajectory = new google.maps.Polyline({
       path,
       geodesic: true,
-      strokeColor: '#FF0000',
-      strokeOpacity: 1.0,
+      strokeColor: '#FFFF00',
+      strokeOpacity: 2.0,
       strokeWeight: 2
     });
     this.trajectory.setMap(this.map);
@@ -476,7 +495,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 5,
-          fillColor: '#0000FF',
+          fillColor: '#FFFF00',
           fillOpacity: 1,
           strokeWeight: 0,
         },
@@ -698,6 +717,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
       this.following = true;
       this.updateSpeedAndTime(selectedDevice.position);
+      // Pan to the last known position
+      this.map.panTo(this.center);
     }
   }
 
@@ -789,12 +810,13 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (stepCount < steps) {
         const newLat = start.latitude + latStep * stepCount;
         const newLng = start.longitude + lngStep * stepCount;
-        this.updateReplayMarkerPosition({
+        const newPosition = {
           ...start,
           latitude: newLat,
           longitude: newLng,
           course: start.course
-        });
+        };
+        this.updateReplayMarkerPosition(newPosition);
         stepCount++;
         this.animationFrameId = requestAnimationFrame(step);
       } else {
@@ -818,7 +840,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     for (const parking of this.parkingEvents) {
       const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${parking.latitude},${parking.longitude}&key=${this.apiKey}`);
       const data = await response.json();
-      console.log("data", data);
 
       if (data.status === 'OK' && data.results.length > 0) {
         parking.address = this.getFormattedAddress(data);
@@ -848,7 +869,6 @@ export class MapComponent implements OnInit, AfterViewInit {
         return result.formatted_address;
       }
     }
-
     return 'No address found for the specified types';
   }
 

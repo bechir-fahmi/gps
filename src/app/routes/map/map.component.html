@@ -26,13 +26,13 @@
       [max]="200"
       [type]="'arch'"
       [cap]="'butt'"
-      [size]="200"
+      [size]="100"
       [thick]="12"
       [label]="'Speed (km/h)'"
       [foregroundColor]="'#FF0000'"
       [backgroundColor]="'#E0E0E0'">
     </ngx-gauge>
-    <div>{{ currentDatetime }}</div>
+    <!-- <div>{{ currentDatetime }}</div> -->
   </div>
   <div *ngIf="loading" class="loading-indicator">
     <p-progressSpinner ariaLabel="loading"></p-progressSpinner>
