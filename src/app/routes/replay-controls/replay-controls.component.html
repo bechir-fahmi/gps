@@ -15,7 +15,7 @@
   <p-button (click)="onPlay()" icon="pi pi-play-circle" />
   <p-button (click)="onPause()" icon="pi pi-pause-circle" />
   <p-button (click)="onForward()" icon="pi pi-forward" />
-  <p-button (click)="onRewind()" icon="pi pi-step-backward" />
+  <p-button (click)="onRewind()" icon="pi pi-backward" />
   <p-button (click)="onClose()" icon="pi pi-times-circle" />
   <div class="seek-bar">
     <input type="range" min="0" [max]="maxPosition" [(ngModel)]="currentPosition" (input)="onSeek()">
