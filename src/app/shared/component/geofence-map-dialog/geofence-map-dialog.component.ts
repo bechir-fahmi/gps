@@ -11,6 +11,7 @@ export class GeofenceMapDialogComponent implements OnInit, AfterViewInit, OnChan
   @Input() displayDialog: boolean = false;
   @Output() displayDialogChange = new EventEmitter<boolean>();
   @Input() geofence: Geofence | null = null;
+  @Input() mode: 'view' | 'edit' = 'edit';
   @Output() geofenceSaved = new EventEmitter<Geofence>();
   @Output() dialogClosed = new EventEmitter<void>();
 
@@ -60,7 +61,7 @@ export class GeofenceMapDialogComponent implements OnInit, AfterViewInit, OnChan
 
     this.drawingManager = new google.maps.drawing.DrawingManager({
       drawingMode: google.maps.drawing.OverlayType.POLYGON,
-      drawingControl: true,
+      drawingControl: this.mode === 'edit',
       drawingControlOptions: {
         position: google.maps.ControlPosition.TOP_CENTER,
         drawingModes: [

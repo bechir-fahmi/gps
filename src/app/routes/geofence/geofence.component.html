@@ -79,6 +79,7 @@
 <app-geofence-map-dialog
   [displayDialog]="displayMapDialog"
   [geofence]="selectedGeofence"
+  [mode]="mapDialogMode"
   (geofenceSaved)="onGeofenceSaved($event)"
   (dialogClosed)="onDialogClosed()"
 ></app-geofence-map-dialog>

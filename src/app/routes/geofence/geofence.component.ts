@@ -6,13 +6,14 @@ import { Geofence } from '../../shared/models/geofence';
 @Component({
   selector: 'app-geofence',
   templateUrl: './geofence.component.html',
-  styleUrl: './geofence.component.css',
+  styleUrls: ['./geofence.component.css'],
   providers: [MessageService],
 })
 export class GeofenceComponent {
   geofences: Geofence[] = [];
   selectedGeofence: Geofence | null = null;
   displayMapDialog: boolean = false;
+  mapDialogMode: 'view' | 'edit' = 'edit';
   loading: boolean = true;
 
   constructor(
@@ -42,11 +43,8 @@ export class GeofenceComponent {
   }
 
   showMapDialog(geofence: Geofence | null, mode: 'view' | 'edit'): void {
-    if (mode === 'view') {
-      this.selectedGeofence = geofence ? { ...geofence } : null;
-    } else {
-      this.selectedGeofence = geofence ? { ...geofence } : { id: 0, name: '', description: '', area: '', calendarId: 0, attributes: {} };
-    }
+    this.selectedGeofence = geofence ? { ...geofence } : { id: 0, name: '', description: '', area: '', calendarId: 0, attributes: {} };
+    this.mapDialogMode = mode;
     this.displayMapDialog = true;
   }
 

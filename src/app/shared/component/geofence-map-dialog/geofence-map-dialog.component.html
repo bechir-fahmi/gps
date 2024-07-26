@@ -2,16 +2,16 @@
   <div class="p-fluid">
     <div class="p-field">
       <label for="name">Name</label>
-      <input id="name" type="text" pInputText [(ngModel)]="geofence.name" *ngIf="geofence" />
+      <input id="name" type="text" pInputText [(ngModel)]="geofence.name" *ngIf="geofence" [disabled]="mode === 'view'" />
     </div>
     <div class="p-field">
       <label for="description">Description</label>
-      <input id="description" type="text" pInputText [(ngModel)]="geofence.description" *ngIf="geofence" />
+      <input id="description" type="text" pInputText [(ngModel)]="geofence.description" *ngIf="geofence" [disabled]="mode === 'view'" />
     </div>
   </div>
   <div #mapContainer id="map" style="height: 60%; width: 100%;"></div>
   <p-footer>
     <p-button label="Cancel" icon="pi pi-times" (click)="closeDialog()"></p-button>
-    <p-button label="Save" icon="pi pi-check" (click)="saveGeofence()" [disabled]="!geofence"></p-button>
+    <p-button *ngIf="mode === 'edit'" label="Save" icon="pi pi-check" (click)="saveGeofence()" [disabled]="!geofence"></p-button>
   </p-footer>
 </p-dialog>
