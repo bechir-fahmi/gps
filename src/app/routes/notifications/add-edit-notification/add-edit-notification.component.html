@@ -1,0 +1,25 @@
+<div class="p-fluid custom-dialog">
+  <div class="p-field p-col-12 p-md-6">
+    <p-floatLabel>
+      <input pInputText id="type" [(ngModel)]="notification.type" placeholder=" " />
+      <label for="type">Type</label>
+    </p-floatLabel>
+  </div>
+
+  <div class="p-field p-col-12 p-md-6">
+    <label for="always">Always</label>
+    <p-checkbox id="always" [(ngModel)]="notification.always" [binary]="true"></p-checkbox>
+  </div>
+
+  <div class="p-field p-col-12 p-md-6">
+    <p-floatLabel>
+      <input pInputText id="notificators" [(ngModel)]="notification.notificators" placeholder=" " />
+      <label for="notificators">Notificators</label>
+    </p-floatLabel>
+  </div>
+</div>
+
+<p-footer>
+  <p-button label="Cancel" icon="pi pi-times" (click)="closeDialog()"></p-button>
+  <p-button label="Save" icon="pi pi-check" (click)="saveNotification()"></p-button>
+</p-footer>

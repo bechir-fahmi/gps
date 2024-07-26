@@ -1,0 +1,33 @@
+/* Ensure the dialog applies the custom-dialog styles correctly */
+.custom-dialog .p-field {
+  margin-bottom: 1.5rem; /* Increase space between fields */
+}
+
+.custom-dialog .p-field input,
+.custom-dialog .p-field .p-checkbox {
+  width: 100%; /* Ensure full width for input and checkbox */
+}
+
+.custom-dialog .p-float-label {
+  margin-top: 1.5rem; /* Space between float label and input */
+}
+
+.custom-dialog .p-float-label label {
+  top: -1rem; /* Adjust the floating label position */
+  left: 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+  color: #666666;
+}
+
+.custom-dialog .p-float-label input:focus ~ label,
+.custom-dialog .p-float-label input:not(:placeholder-shown) ~ label {
+  top: -1.5rem; /* Adjust the floating label position when input is focused or has a value */
+  font-size: 0.75rem;
+  color: #007ad9; /* Color when focused */
+}
+
+.p-dialog .p-footer .p-button {
+  margin-right: 1rem; /* Space between footer buttons */
+}
+

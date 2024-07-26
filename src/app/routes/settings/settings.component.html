@@ -1,0 +1,15 @@
+<div class="settings-container">
+  <div class="sidebar">
+    <ul>
+      <li (click)="selectSection('notifications')">Notifications</li>
+      <li (click)="selectSection('account')">Account</li>
+      <li (click)="selectSection('geofence')">Geofence</li>
+      <!-- Add more sections as needed -->
+    </ul>
+  </div>
+  <div class="settings-content">
+    <app-notifications *ngIf="selectedSection === 'notifications'"></app-notifications>
+    <app-geofence *ngIf="selectedSection === 'geofence'"></app-geofence>
+    <!-- Add more components as needed -->
+  </div>
+</div>

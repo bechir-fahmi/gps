@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit, NgZone, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, NgZone, HostListener, ElementRef } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { Position } from '../../shared/models/position';
 import { GoogleMap } from '@angular/google-maps';
@@ -13,6 +13,8 @@ import { ParkingDetectionService } from '../../Services/parking/parking-detectio
 import { environment } from '../../../environments/environment';
 import { DeviceListComponent } from '../device-list/device-list.component';
 
+declare const ymaps: any;
+
 @Component({
   selector: 'app-map',
   templateUrl: './map.component.html',
@@ -21,14 +23,16 @@ import { DeviceListComponent } from '../device-list/device-list.component';
 })
 export class MapComponent implements OnInit, AfterViewInit {
   @ViewChild('mapElement', { static: false }) mapElement!: GoogleMap;
+  @ViewChild('yandexMapContainer') yandexMapContainer!: ElementRef;
   @ViewChild('deviceList') deviceListComponent!: DeviceListComponent;
   devicesWithPositions: { device: Device, position: Position }[] = [];
   center: google.maps.LatLngLiteral = { lat: 36.8448198, lng: 10.0297012 };
   zoom = 8;
   defaultZoom = 15;
   selectedDevice: { device: Device, position: Position } | null = null;
-  map!: google.maps.Map;
-  markers: Map<number, google.maps.marker.AdvancedMarkerElement> = new Map();
+  googleMap!: google.maps.Map;
+  yandexMap: any;
+  currentMap: string = 'google';
   mapId: string = "bdf0595e5330a4d";
   carIcon: string = '../../../assets/images/icons8-voiture-50.png';
   parkingIcon: string = 'https://t4.ftcdn.net/jpg/01/92/38/33/360_F_192383331_4RSRvuUk5OQ0Td04bRGkGw1VJ4PO9lW3.jpg';
@@ -65,6 +69,13 @@ export class MapComponent implements OnInit, AfterViewInit {
   gaugeThickness: number = 12;
   private lastPanTime: number = 0;
   private throttleDelay: number = 200; // Throttle delay in milliseconds
+
+  mapOptions = [
+    { label: 'Google Map', value: 'google' },
+    { label: 'Yandex Map', value: 'yandex' }
+  ];
+  selectedMap = 'google';
+  markers: Map<number, google.maps.marker.AdvancedMarkerElement | any> = new Map(); // Updated for Yandex support
 
   constructor(
     private dialog: MatDialog,
@@ -114,7 +125,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.mapsLoader.load().then(() => {
-      this.map = this.mapElement.googleMap!;
+      this.googleMap = this.mapElement.googleMap!;
       this.initializeMarkers();
       this.infoWindow = new google.maps.InfoWindow();
 
@@ -150,11 +161,11 @@ export class MapComponent implements OnInit, AfterViewInit {
         });
       });
 
-      this.map.addListener('dragstart', () => {
+      this.googleMap.addListener('dragstart', () => {
         this.stopAutoFollow = true;
       });
 
-      this.map.addListener('zoom_changed', () => {
+      this.googleMap.addListener('zoom_changed', () => {
         this.updateMarkerSize();
       });
 
@@ -168,37 +179,59 @@ export class MapComponent implements OnInit, AfterViewInit {
     return this.devicesWithPositions.map(d => d.device);
   }
 
-  initializeMarkers(): void {
-    if (!google.maps.marker.AdvancedMarkerElement) {
-      console.error('AdvancedMarkerElement is not available. Ensure you have included the marker library in your Google Maps script.');
-      return;
+  switchMap(mapType: string): void {
+    this.currentMap = mapType;
+    if (mapType === 'yandex') {
+      this.loadYandexMap();
+    } else if (mapType === 'google') {
+      this.loadGoogleMap();
     }
+  }
 
+  loadGoogleMap(): void {
+    this.googleMap = this.mapElement.googleMap!;
+    this.initializeMarkers();
+  }
+
+  loadYandexMap() {
+    if (!this.yandexMap) {
+      const yandexScript = document.createElement('script');
+      yandexScript.src = 'https://api-maps.yandex.ru/2.1/?lang=en_RU';
+      yandexScript.onload = () => {
+        ymaps.ready(() => {
+          this.yandexMap = new ymaps.Map(this.yandexMapContainer.nativeElement, {
+            center: [this.center.lat, this.center.lng],
+            zoom: this.zoom
+          });
+          this.initializeYandexMarkers();
+        });
+      };
+      document.body.appendChild(yandexScript);
+    } else {
+      this.yandexMap.setCenter([this.center.lat, this.center.lng], this.zoom);
+    }
+  }
+
+  initializeMarkers(): void {
+    if (this.currentMap === 'google') {
+      this.devicesWithPositions.forEach(({ device, position }) => {
+        this.addGoogleMarker(device, position);
+        this.addGoogleTrajectoryMarker(position);
+      });
+    } else if (this.currentMap === 'yandex') {
+      this.devicesWithPositions.forEach(({ device, position }) => {
+        this.addYandexMarker(device, position);
+      });
+    }
+  }
+
+  initializeYandexMarkers(): void {
     this.devicesWithPositions.forEach(({ device, position }) => {
-      this.addMarker(device, position);
-      this.addTrajectoryMarker(position);
+      this.addYandexMarker(device, position);
     });
   }
 
-  addTrajectoryMarker(position: Position): void {
-    const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
-
-    const marker = new google.maps.Marker({
-      position: positionLatLng,
-      map: this.map,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 5,
-        fillColor: '#0000FF',
-        fillOpacity: 1,
-        strokeWeight: 0,
-      },
-    });
-
-    this.trajectoryMarkers.push(marker);
-  }
-
-  addMarker(device: Device, position: Position): void {
+  addGoogleMarker(device: Device, position: Position): void {
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
 
     const wrapper = document.createElement('div');
@@ -227,7 +260,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     wrapper.appendChild(icon);
 
     const marker = new google.maps.marker.AdvancedMarkerElement({
-      map: this.map,
+      map: this.googleMap,
       position: positionLatLng,
       title: device.name,
       content: wrapper,
@@ -249,45 +282,108 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.updateMarkerSize();
   }
 
+  addYandexMarker(device: Device, position: Position): void {
+    const positionLatLng = [position.latitude, position.longitude];
+
+    const marker = new ymaps.Placemark(positionLatLng, {
+      hintContent: device.name,
+      balloonContent: device.name
+    }, {
+      iconLayout: 'default#image',
+      iconImageHref: this.carIcon,
+      iconImageSize: [30, 42],
+      iconImageOffset: [-15, -42]
+    });
+
+    this.yandexMap.geoObjects.add(marker);
+    this.markers.set(device.id, marker);
+  }
+
+  addGoogleTrajectoryMarker(position: Position): void {
+    const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
+
+    const marker = new google.maps.Marker({
+      position: positionLatLng,
+      map: this.googleMap,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 5,
+        fillColor: '#0000FF',
+        fillOpacity: 1,
+        strokeWeight: 0,
+      },
+    });
+
+    this.trajectoryMarkers.push(marker);
+  }
+
   updateMarkers(positions: Position[]): void {
     if (this.replaying) return;
 
     positions.forEach(position => {
-      const marker = this.markers.get(position.deviceId);
-      if (marker) {
-        const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
-        marker.position = newPosition;
-
-        if (marker.content instanceof HTMLElement) {
-          const nameElement = marker.content.querySelector('div:nth-child(1)') as HTMLElement;
-          if (nameElement) {
-            nameElement.innerText = this.devicesWithPositions.find(d => d.device.id === position.deviceId)?.device.name || '';
-          }
-
-          const icon = marker.content.querySelector('img') as HTMLElement;
-          if (icon) {
-            icon.style.transform = `rotate(${position.course}deg)`;
-          }
-        }
-
-        this.addTrajectoryMarker(position);
-
-        if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId && !this.stopAutoFollow) {
-          this.center = { lat: position.latitude, lng: position.longitude };
-          this.map.panTo(this.center);
-        }
-      } else {
-        const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
-        this.addMarker(device, position);
-        this.addTrajectoryMarker(position);
+      if (this.currentMap === 'google') {
+        this.updateGoogleMarkers(position);
+      } else if (this.currentMap === 'yandex') {
+        this.updateYandexMarkers(position);
       }
     });
   }
 
+  updateGoogleMarkers(position: Position): void {
+    const marker = this.markers.get(position.deviceId);
+    if (marker) {
+      const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
+      marker.position = newPosition;
+
+      if (marker.content instanceof HTMLElement) {
+        const nameElement = marker.content.querySelector('div:nth-child(1)') as HTMLElement;
+        if (nameElement) {
+          nameElement.innerText = this.devicesWithPositions.find(d => d.device.id === position.deviceId)?.device.name || '';
+        }
+
+        const icon = marker.content.querySelector('img') as HTMLElement;
+        if (icon) {
+          icon.style.transform = `rotate(${position.course}deg)`;
+        }
+      }
+
+      this.addGoogleTrajectoryMarker(position);
+
+      if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId && !this.stopAutoFollow) {
+        this.center = { lat: position.latitude, lng: position.longitude };
+        this.googleMap.panTo(this.center);
+      }
+    } else {
+      const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
+      this.addGoogleMarker(device, position);
+      this.addGoogleTrajectoryMarker(position);
+    }
+  }
+
+  updateYandexMarkers(position: Position): void {
+    const marker = this.markers.get(position.deviceId);
+    if (marker) {
+      const newPosition = [position.latitude, position.longitude];
+      marker.geometry.setCoordinates(newPosition);
+
+      if (this.selectedDevice && this.selectedDevice.device.id === position.deviceId && !this.stopAutoFollow) {
+        this.center = { lat: position.latitude, lng: position.longitude };
+        this.yandexMap.setCenter(newPosition);
+      }
+    } else {
+      const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
+      this.addYandexMarker(device, position);
+    }
+  }
+
   removeAllMarkers(): void {
     this.markers.forEach(marker => {
-      marker.map = null;
-      marker.content = null;
+      if (this.currentMap === 'google') {
+        marker.map = null;
+        marker.content = null;
+      } else if (this.currentMap === 'yandex') {
+        this.yandexMap.geoObjects.remove(marker);
+      }
     });
     this.markers.clear();
 
@@ -351,7 +447,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     content.appendChild(buttonsDiv);
     this.infoWindow.setPosition(position);
     this.infoWindow.setContent(content);
-    this.infoWindow.open(this.map);
+    this.infoWindow.open(this.googleMap);
   }
 
   startReplay(deviceId: number, from?: string, to?: string): void {
@@ -378,7 +474,12 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.parkingEvents = parkings;
         this.deviceListComponent.parkingEvents = parkings;
         this.getParkingAddresses();
-        this.map.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
+
+        if (this.currentMap === 'google') {
+          this.googleMap.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
+        } else if (this.currentMap === 'yandex') {
+          this.yandexMap.setCenter([positions[0].latitude, positions[0].longitude]);
+        }
 
         this.loading = false;
       } else {
@@ -440,7 +541,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     wrapper.appendChild(icon);
 
     const replayMarker = new google.maps.marker.AdvancedMarkerElement({
-      map: this.map,
+      map: this.googleMap,
       position: positionLatLng,
       content: wrapper,
     });
@@ -469,8 +570,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     const now = Date.now();
     if (now - this.lastPanTime >= this.throttleDelay) {
       this.lastPanTime = now;
-      if (this.map) {
-        this.map.panTo(position);
+      if (this.googleMap) {
+        this.googleMap.panTo(position);
       } else {
         console.error('Map is not defined.');
       }
@@ -478,6 +579,14 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   displayTrajectory(positions: Position[]): void {
+    if (this.currentMap === 'google') {
+      this.displayGoogleTrajectory(positions);
+    } else if (this.currentMap === 'yandex') {
+      this.displayYandexTrajectory(positions);
+    }
+  }
+
+  displayGoogleTrajectory(positions: Position[]): void {
     const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
     this.trajectory = new google.maps.Polyline({
       path,
@@ -486,12 +595,12 @@ export class MapComponent implements OnInit, AfterViewInit {
       strokeOpacity: 2.0,
       strokeWeight: 2
     });
-    this.trajectory.setMap(this.map);
+    this.trajectory.setMap(this.googleMap);
 
     positions.forEach(pos => {
       const marker = new google.maps.Marker({
         position: { lat: pos.latitude, lng: pos.longitude },
-        map: this.map,
+        map: this.googleMap,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 5,
@@ -522,6 +631,15 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
+  displayYandexTrajectory(positions: Position[]): void {
+    const path = positions.map(pos => [pos.latitude, pos.longitude]);
+    const polyline = new ymaps.Polyline(path, {}, {
+      strokeColor: '#FFFF00',
+      strokeWidth: 2
+    });
+    this.yandexMap.geoObjects.add(polyline);
+  }
+
   clearTrajectoryMarkers(): void {
     this.trajectoryMarkers.forEach(marker => {
       marker.setMap(null);
@@ -530,6 +648,14 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   displayParkingMarkers(parkings: any): void {
+    if (this.currentMap === 'google') {
+      this.displayGoogleParkingMarkers(parkings);
+    } else if (this.currentMap === 'yandex') {
+      this.displayYandexParkingMarkers(parkings);
+    }
+  }
+
+  displayGoogleParkingMarkers(parkings: any): void {
     parkings.forEach((parking: any) => {
       const positionLatLng = new google.maps.LatLng(parking.latitude, parking.longitude);
 
@@ -548,7 +674,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       wrapper.appendChild(icon);
 
       const parkingMarker = new google.maps.marker.AdvancedMarkerElement({
-        map: this.map,
+        map: this.googleMap,
         position: positionLatLng,
         content: wrapper,
       });
@@ -557,10 +683,29 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  clearParkingMarkers(): void {
-    this.parkingMarkers.forEach(marker => {
-      marker.map = null;
+  displayYandexParkingMarkers(parkings: any): void {
+    parkings.forEach((parking: any) => {
+      const positionLatLng = [parking.latitude, parking.longitude];
+
+      const marker = new ymaps.Placemark(positionLatLng, {}, {
+        iconLayout: 'default#image',
+        iconImageHref: this.parkingIcon,
+        iconImageSize: [20, 20],
+        iconImageOffset: [-10, -10]
+      });
+
+      this.yandexMap.geoObjects.add(marker);
     });
+  }
+
+  clearParkingMarkers(): void {
+    if (this.currentMap === 'google') {
+      this.parkingMarkers.forEach(marker => {
+        marker.map = null;
+      });
+    } else if (this.currentMap === 'yandex') {
+      this.yandexMap.geoObjects.removeAll();
+    }
     this.parkingMarkers = [];
     this.deviceListComponent.parkingEvents = [];
   }
@@ -711,19 +856,27 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.center = { lat: selectedDevice.position.latitude, lng: selectedDevice.position.longitude };
       if (!this.isZooming) {
         this.smoothZoom(this.defaultZoom, () => {
-          this.map?.panTo(this.center);
+          if (this.currentMap === 'google') {
+            this.googleMap?.panTo(this.center);
+          } else if (this.currentMap === 'yandex') {
+            this.yandexMap.setCenter([this.center.lat, this.center.lng]);
+          }
           this.stopAutoFollow = true;
         });
       }
       this.following = true;
       this.updateSpeedAndTime(selectedDevice.position);
       // Pan to the last known position
-      this.map.panTo(this.center);
+      if (this.currentMap === 'google') {
+        this.googleMap.panTo(this.center);
+      } else if (this.currentMap === 'yandex') {
+        this.yandexMap.setCenter([this.center.lat, this.center.lng]);
+      }
     }
   }
 
   smoothZoom(targetZoom: number, callback: () => void): void {
-    const currentZoom = this.map.getZoom() || this.zoom;
+    const currentZoom = this.currentMap === 'google' ? this.googleMap.getZoom() || this.zoom : this.yandexMap.getZoom() || this.zoom;
     if (currentZoom === targetZoom) {
       callback();
       return;
@@ -732,8 +885,12 @@ export class MapComponent implements OnInit, AfterViewInit {
     const increment = targetZoom > currentZoom ? 1 : -2;
     this.isZooming = true;
     const interval = setInterval(() => {
-      const newZoom = (this.map.getZoom() || 0) + increment;
-      this.map.setZoom(newZoom);
+      const newZoom = (this.currentMap === 'google' ? this.googleMap.getZoom() || 0 : this.yandexMap.getZoom() || 0) + increment;
+      if (this.currentMap === 'google') {
+        this.googleMap.setZoom(newZoom);
+      } else if (this.currentMap === 'yandex') {
+        this.yandexMap.setZoom(newZoom);
+      }
 
       if ((increment > 0 && newZoom >= targetZoom) || (increment < 0 && newZoom <= targetZoom)) {
         clearInterval(interval);
@@ -760,9 +917,9 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   updateMarkerSize(): void {
-    const zoomLevel = this.map.getZoom() || this.zoom;
+    const zoomLevel = this.currentMap === 'google' ? this.googleMap.getZoom() || this.zoom : this.yandexMap.getZoom() || this.zoom;
     this.markers.forEach(marker => {
-      if (marker.content instanceof HTMLElement) {
+      if (this.currentMap === 'google' && marker.content instanceof HTMLElement) {
         const icon = marker.content.querySelector('img');
         if (icon) {
           if (icon.classList.contains('parking-marker')) {

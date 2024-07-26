@@ -22,7 +22,7 @@ export class GoogleMapsLoaderService {
       }
 
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKey}&libraries=marker&v=weekly`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKey}&libraries=drawing,marker&v=weekly`;
       script.async = true;
       script.defer = true;
 

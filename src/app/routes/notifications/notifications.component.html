@@ -1,0 +1,86 @@
+<div class="grid">
+  <div class="col-12">
+    <div class="card">
+      <p-table
+        [value]="notifications"
+        [loading]="loading"
+        [rows]="5"
+        [paginator]="true"
+        [rowsPerPageOptions]="[5, 10, 20]"
+        [totalRecords]="totalRecords"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        scrollHeight="400px"
+      >
+        <ng-template pTemplate="caption">
+          <div>
+            <p-button
+              pRipple
+              type="button"
+              icon="pi pi-plus"
+              label="Add"
+              (click)="showAddDialog()"
+              styleClass="p-button-outlined"
+            ></p-button>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="type">Type</th>
+            <th pSortableColumn="always">Always</th>
+            <th pSortableColumn="notificators">Notificators</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-notification>
+          <tr>
+            <td>{{ notification.type }}</td>
+            <td>{{ notification.always }}</td>
+            <td>{{ notification.notificators }}</td>
+            <td>
+              <p-button
+                pRipple
+                type="button"
+                icon="pi pi-pencil"
+                (click)="showEditDialog(notification)"
+                styleClass="p-button-outlined"
+              ></p-button>
+              <p-button
+                pRipple
+                type="button"
+                icon="pi pi-trash"
+                (click)="deleteNotification(notification)"
+                styleClass="p-button-outlined"
+              ></p-button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4">No notifications found.</td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="loadingbody">
+          <tr>
+            <td colspan="4">Loading notifications data. Please wait.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<p-toast key="toast"></p-toast>
+
+<p-dialog header="{{ selectedNotification.id ? 'Edit' : 'Add' }} Notification" [(visible)]="displayDialog" [modal]="true" [closable]="true" [style]="{width: '50vw'}" >
+  <app-add-edit-notification
+    [displayDialog]="displayDialog"
+    [notification]="selectedNotification"
+    (notificationSaved)="onNotificationSaved()"
+    (dialogClosed)="onDialogClosed()"
+  ></app-add-edit-notification>
+</p-dialog>

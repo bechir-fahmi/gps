@@ -1,0 +1,27 @@
+.settings-container {
+  display: flex;
+}
+
+.sidebar {
+  width: 200px;
+  border-right: 1px solid #ddd;
+}
+
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.sidebar li:hover {
+  background-color: #f0f0f0;
+}
+
+.settings-content {
+  flex-grow: 1;
+  padding: 20px;
+}

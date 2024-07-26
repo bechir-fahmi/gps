@@ -35,6 +35,17 @@ import { NgxGaugeModule } from 'ngx-gauge';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DropdownModule } from 'primeng/dropdown';
+import { OpenlayerMapComponent } from './routes/openlayer-map/openlayer-map.component';
+import { SettingsComponent } from './routes/settings/settings.component';
+import { NotificationsComponent } from './routes/notifications/notifications.component';
+import { TableModule } from 'primeng/table';
+import { AddEditNotificationComponent } from './routes/notifications/add-edit-notification/add-edit-notification.component';
+import { DialogModule } from 'primeng/dialog';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { GeofenceComponent } from './routes/geofence/geofence.component';
+import { GeofenceMapDialogComponent } from './shared/component/geofence-map-dialog/geofence-map-dialog.component';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -47,7 +58,13 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     LoginComponent,
     DeviceCardComponent,
     ReplayControlsComponent,
-    DateRangeDialogComponent
+    DateRangeDialogComponent,
+    OpenlayerMapComponent,
+    SettingsComponent,
+    NotificationsComponent,
+    AddEditNotificationComponent,
+    GeofenceComponent,
+    GeofenceMapDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -72,7 +89,12 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     NgxGaugeModule,
     ConfirmDialogModule,
     ProgressSpinnerModule,
-    DropdownModule
+    DropdownModule,
+    TableModule,
+    DialogModule,
+    CheckboxModule,
+    InputTextModule,
+    FloatLabelModule
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())
