@@ -6,11 +6,13 @@ import { LoginComponent } from './routes/login/login.component';
 import { DeviceCardComponent } from './routes/device-card/device-card.component';
 import { authGuard } from './core/authGuard/auth.guard';
 import { redirectGuard } from './core/redirectGuard/redirect.guard';
+import { SettingsComponent } from './routes/settings/settings.component';
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'map', component: MapComponent, canActivate: [authGuard] },
   { path: 'device-list', component: DeviceListComponent, canActivate: [authGuard] },
   { path: 'device-card', component: DeviceCardComponent, canActivate: [authGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
   // { path: '', canActivate: [redirectGuard], pathMatch: 'full' },
   { path: '**', redirectTo: 'map', pathMatch: 'full' } // Redirect all other paths
 ];
