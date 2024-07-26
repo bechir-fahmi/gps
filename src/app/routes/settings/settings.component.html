@@ -1,11 +1,10 @@
 <div class="settings-container">
   <div class="sidebar">
-    <ul>
-      <li (click)="selectSection('notifications')">Notifications</li>
-      <li (click)="selectSection('account')">Account</li>
-      <li (click)="selectSection('geofence')">Geofence</li>
-      <!-- Add more sections as needed -->
-    </ul>
+    <!-- Back button with PrimeNG button -->
+    <button pButton type="button" icon="pi pi-arrow-left" label="Back" class="back-button" (click)="goBack()"></button>
+
+    <!-- PrimeNG Menu component for sidebar items -->
+    <p-menu #menu [model]="items" [popup]="false"></p-menu>
   </div>
   <div class="settings-content">
     <app-notifications *ngIf="selectedSection === 'notifications'"></app-notifications>

@@ -46,6 +46,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { GeofenceComponent } from './routes/geofence/geofence.component';
 import { GeofenceMapDialogComponent } from './shared/component/geofence-map-dialog/geofence-map-dialog.component';
+import { MenuModule } from 'primeng/menu';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -94,7 +95,8 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     DialogModule,
     CheckboxModule,
     InputTextModule,
-    FloatLabelModule
+    FloatLabelModule,
+    MenuModule
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())
