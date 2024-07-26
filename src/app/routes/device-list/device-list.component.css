@@ -46,8 +46,27 @@
   border: 1px solid #ccc;
 }
 
+.settings-button {
+  margin-left: 150px; /* Adjust as needed for spacing */
+}
+
+.header-with-icon {
+  display: flex;
+  align-items: center;
+}
 @media screen and (max-width: 768px) {
   .device-list li {
     padding: 5px;
   }
+  .header-with-icon {
+    flex-direction: column; /* Stack items vertically on smaller screens */
+    align-items: flex-start; /* Align items to the start */
+  }
+
+  .settings-button {
+    margin-left: 80px; /* Reset margin to remove space between items */
+    margin-top: 10px; /* Add margin on top of the settings button */
+
+  }
+
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { DeviceService } from '../../Services/device/device.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-device-list',
@@ -13,7 +14,7 @@ export class DeviceListComponent implements OnInit {
   @Input() parkingEvents: any[] = [];
   @Output() deviceSelected: EventEmitter<Device> = new EventEmitter<Device>();
 
-  constructor(private deviceService: DeviceService) { }
+  constructor(private deviceService: DeviceService,private router: Router) { }
   /**
    * Initializes the component and retrieves a list of devices from the device service.
    *
@@ -60,5 +61,9 @@ export class DeviceListComponent implements OnInit {
     return hours > 0
     ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`
     : `${mins} minute${mins > 1 ? 's' : ''} ${secs} second${secs !== 1 ? 's' : ''}`;
+  }
+
+  openSettings(): void {
+    this.router.navigate(['/settings']);
   }
 }
