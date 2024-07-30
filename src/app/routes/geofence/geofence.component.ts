@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { GeofenceService } from '../../Services/geofence/geofence.service';
 import { Geofence } from '../../shared/models/geofence';
 
@@ -7,7 +7,7 @@ import { Geofence } from '../../shared/models/geofence';
   selector: 'app-geofence',
   templateUrl: './geofence.component.html',
   styleUrls: ['./geofence.component.css'],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
 })
 export class GeofenceComponent {
   geofences: Geofence[] = [];
@@ -18,8 +18,9 @@ export class GeofenceComponent {
 
   constructor(
     private geofenceService: GeofenceService,
-    private messageService: MessageService
-  ) {}
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService,
+  ) { }
 
   ngOnInit(): void {
     this.loadGeofences();
@@ -91,23 +92,33 @@ export class GeofenceComponent {
   }
 
   deleteGeofence(id: number): void {
-    this.geofenceService.deleteGeofence(id).subscribe(
-      () => {
-        this.geofences = this.geofences.filter(g => g.id !== id);
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Geofence deleted.',
-        });
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to delete this geofence?',
+      header: 'Delete Confirmation',
+      icon: 'pi pi-info-circle',
+      accept: () => {
+        this.geofenceService.deleteGeofence(id).subscribe(
+          () => {
+            this.geofences = this.geofences.filter(g => g.id !== id);
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Geofence deleted.',
+            });
+          },
+          (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete geofence.',
+            });
+          }
+        );
       },
-      (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to delete geofence.',
-        });
+      reject: () => {
+        this.messageService.add({ severity: 'info', summary: 'Cancelled', detail: 'You have cancelled the operation' });
       }
-    );
+    });
   }
 
   onDialogClosed(): void {
