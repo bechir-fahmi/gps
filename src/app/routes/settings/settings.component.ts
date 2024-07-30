@@ -11,8 +11,9 @@ export class SettingsComponent {
   items: any[];
   constructor(private router: Router) {
     this.items = [
+
+      { label: 'User Manager', icon: 'pi pi-user', command: () => this.selectSection('account') },
       { label: 'Notifications', icon: 'pi pi-bell', command: () => this.selectSection('notifications') },
-      { label: 'Account', icon: 'pi pi-user', command: () => this.selectSection('account') },
       { label: 'Geofence', icon: 'pi pi-map', command: () => this.selectSection('geofence') }
     ];
   }
