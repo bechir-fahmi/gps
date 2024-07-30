@@ -13,5 +13,12 @@
   <p-footer>
     <p-button label="Cancel" icon="pi pi-times" (click)="closeDialog()"></p-button>
     <p-button *ngIf="mode === 'edit'" label="Save" icon="pi pi-check" (click)="saveGeofence()" [disabled]="!geofence"></p-button>
+    <p-button
+  *ngIf="mode === 'edit'"
+  label="Remove Shape"
+  icon="pi pi-trash"
+  (click)="removeSelectedOverlay()"
+  [disabled]="!selectedOverlay">
+</p-button>
   </p-footer>
 </p-dialog>

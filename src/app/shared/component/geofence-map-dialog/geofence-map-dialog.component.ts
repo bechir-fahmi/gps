@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges, NgZone } from '@angular/core';
+import { ConfirmationService } from 'primeng/api';
 import { Geofence } from '../../models/geofence';
 import { GoogleMapsLoaderService } from '../../../Services/google-map-loader/google-maps-loader.service';
 
@@ -20,8 +21,13 @@ export class GeofenceMapDialogComponent implements OnInit, AfterViewInit, OnChan
   map!: google.maps.Map;
   drawingManager!: google.maps.drawing.DrawingManager;
   currentOverlays: (google.maps.Circle | google.maps.Polygon)[] = [];
+  selectedOverlay: google.maps.Circle | google.maps.Polygon | null = null;
 
-  constructor(private googleMapsLoader: GoogleMapsLoaderService, private ngZone: NgZone) {}
+  constructor(
+    private googleMapsLoader: GoogleMapsLoaderService,
+    private ngZone: NgZone,
+    private confirmationService: ConfirmationService
+  ) {}
 
   ngOnInit(): void {}
 
@@ -75,9 +81,16 @@ export class GeofenceMapDialogComponent implements OnInit, AfterViewInit, OnChan
 
     google.maps.event.addListener(this.drawingManager, 'overlaycomplete', (event: any) => {
       this.currentOverlays.push(event.overlay);
+      this.addOverlayListeners(event.overlay);
       if (this.geofence) {
         this.geofence.area += this.getOverlayCoordinates(event.overlay) + ';';
       }
+    });
+  }
+
+  addOverlayListeners(overlay: google.maps.Circle | google.maps.Polygon): void {
+    google.maps.event.addListener(overlay, 'click', () => {
+      this.selectedOverlay = overlay;
     });
   }
 
@@ -121,6 +134,7 @@ export class GeofenceMapDialogComponent implements OnInit, AfterViewInit, OnChan
         this.map.fitBounds(bounds as google.maps.LatLngBounds);
       }
       this.currentOverlays.push(circle);
+      this.addOverlayListeners(circle);
     }
   }
 
@@ -144,6 +158,26 @@ export class GeofenceMapDialogComponent implements OnInit, AfterViewInit, OnChan
         this.map.fitBounds(bounds);
       }
       this.currentOverlays.push(polygon);
+      this.addOverlayListeners(polygon);
+    }
+  }
+
+  confirmRemoveSelectedOverlay(): void {
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to delete this shape?',
+      accept: () => {
+        this.removeSelectedOverlay();
+      }
+    });
+  }
+
+  removeSelectedOverlay(): void {
+    if (this.selectedOverlay) {
+      this.selectedOverlay.setMap(null);
+      const coordinatesToRemove = this.getOverlayCoordinates(this.selectedOverlay);
+      this.geofence!.area = this.geofence!.area.replace(`${coordinatesToRemove};`, '');
+      this.currentOverlays = this.currentOverlays.filter(overlay => overlay !== this.selectedOverlay);
+      this.selectedOverlay = null;
     }
   }
 
