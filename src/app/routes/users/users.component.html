@@ -1,0 +1,78 @@
+<div class="grid">
+  <div class="col-12">
+    <div class="card">
+      <p-table
+        [value]="users"
+        [loading]="loading"
+        [rows]="10"
+        [paginator]="true"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [totalRecords]="users.length"
+        responsiveLayout="scroll"
+        scrollHeight="400px"
+      >
+        <ng-template pTemplate="caption">
+          <div>
+            <p-button
+              pRipple
+              type="button"
+              icon="pi pi-plus"
+              label="Add"
+              styleClass="p-button-outlined"
+              (click)="showDialogToAdd()"
+            ></p-button>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="name">Name</th>
+            <th pSortableColumn="email">Email</th>
+            <th pSortableColumn="phone">Phone</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-user>
+          <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone }}</td>
+            <td>
+              <p-button
+                pRipple
+                type="button"
+                icon="pi pi-pencil"
+                styleClass="p-button-outlined"
+                (click)="showDialogToEdit(user)"
+              ></p-button>
+              <p-button
+                pRipple
+                type="button"
+                icon="pi pi-trash"
+                styleClass="p-button-outlined"
+                (click)="deleteUser(user)"
+              ></p-button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4">No users found.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+<app-add-edit-user
+  [display]="displayDialog"
+  [user]="selectedUser"
+  (onSave)="saveUser($event)"
+  (onClose)="displayDialog = false"
+></app-add-edit-user>
+
+<p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>

@@ -47,6 +47,8 @@ import { FloatLabelModule } from 'primeng/floatlabel';
 import { GeofenceComponent } from './routes/geofence/geofence.component';
 import { GeofenceMapDialogComponent } from './shared/component/geofence-map-dialog/geofence-map-dialog.component';
 import { MenuModule } from 'primeng/menu';
+import { UsersComponent } from './routes/users/users.component';
+import { AddEditUserComponent } from './routes/users/add-edit-user/add-edit-user.component';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -66,6 +68,8 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     AddEditNotificationComponent,
     GeofenceComponent,
     GeofenceMapDialogComponent,
+    UsersComponent,
+    AddEditUserComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,84 @@
+<p-dialog
+  header="User Details"
+  [(visible)]="display"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '50vw' }"
+  (onHide)="close()"
+>
+  <p-accordion>
+    <p-accordionTab header="Required" [selected]="true">
+      <div class="p-fluid">
+        <div class="p-field">
+          <label for="name">Name</label>
+          <input id="name" type="text" pInputText [(ngModel)]="user!.name" required />
+        </div>
+        <div class="p-field">
+          <label for="email">Email</label>
+          <input id="email" type="text" pInputText [(ngModel)]="user!.email" required />
+        </div>
+        <div class="p-field">
+          <label for="password">Password</label>
+          <input id="password" type="password" pInputText [(ngModel)]="user!.password" required />
+        </div>
+      </div>
+    </p-accordionTab>
+
+    <p-accordionTab header="Preferences">
+      <div class="p-fluid">
+        <div class="p-field">
+          <label for="phone1">Phone 1</label>
+          <input id="phone1" type="text" pInputText [(ngModel)]="user!.phone" required />
+        </div>
+        <div class="p-field">
+          <label for="phone2">Phone 2</label>
+          <input id="phone2" type="text" pInputText />
+        </div>
+        <div class="p-field">
+          <label for="speedUnit">Speed Unit</label>
+          <p-dropdown id="speedUnit"  [options]="[{ label: 'km/h', value: 'km/h' }, { label: 'nd', value: 'nd' }, { label: 'mph', value: 'mph' }]" placeholder="Select a Speed Unit" />
+        </div>
+      </div>
+    </p-accordionTab>
+
+    <p-accordionTab header="Localization">
+      <div class="p-fluid">
+        <div class="p-field">
+          <label for="latitude">Latitude</label>
+          <input id="latitude" type="text" pInputText [(ngModel)]="user!.latitude" />
+        </div>
+        <div class="p-field">
+          <label for="longitude">Longitude</label>
+          <input id="longitude" type="text" pInputText [(ngModel)]="user!.longitude" />
+        </div>
+        <p-button label="Get Current Location" icon="pi pi-location-arrow" (click)="getCurrentLocation()"></p-button>
+      </div>
+    </p-accordionTab>
+
+    <p-accordionTab header="Permissions">
+      <div class="p-fluid">
+        <div class="p-field">
+          <label for="expirationTime">Expiration Time</label>
+          <input id="expirationTime" type="datetime-local" pInputText [(ngModel)]="user!.expirationTime" />
+        </div>
+        <div class="p-field">
+          <label for="deviceLimit">Device Limit</label>
+          <input id="deviceLimit" type="number" pInputText [(ngModel)]="user!.deviceLimit" value="-1" />
+        </div>
+        <div class="p-field">
+          <label for="userLimit">User Limit</label>
+          <input id="userLimit" type="number" pInputText [(ngModel)]="user!.userLimit" value="0" />
+        </div>
+        <div class="p-field-checkbox">
+          <p-checkbox id="admin" [(ngModel)]="user!.administrator" binary="true"></p-checkbox>
+          <label for="admin">Administrator</label>
+        </div>
+      </div>
+    </p-accordionTab>
+  </p-accordion>
+
+  <p-footer>
+    <p-button label="Cancel" icon="pi pi-times" (click)="close()"></p-button>
+    <p-button label="Save" icon="pi pi-check" (click)="save()" [disabled]="!user"></p-button>
+  </p-footer>
+</p-dialog>

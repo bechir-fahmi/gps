@@ -7,8 +7,10 @@
     <p-menu #menu [model]="items" [popup]="false"></p-menu>
   </div>
   <div class="settings-content">
+    <!-- <app-users *ngIf="selectedSection === 'users'"></app-users> -->
     <app-notifications *ngIf="selectedSection === 'notifications'"></app-notifications>
     <app-geofence *ngIf="selectedSection === 'geofence'"></app-geofence>
+   <app-users *ngIf="selectedSection === 'users'"></app-users>
     <!-- Add more components as needed -->
   </div>
 </div>
