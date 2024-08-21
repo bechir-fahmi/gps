@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LoginService } from '../../Services/login/login.service';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { SecureStorageService } from '../../Services/storage/secure-storage.service';
+
 
 @Component({
   selector: 'app-login',
@@ -12,15 +14,16 @@ import { MessageService } from 'primeng/api';
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
-    /**
-   * Constructor for LoginComponent class.
-   *
-   * @param {FormBuilder} fb - FormBuilder instance to create the login form
-   * @param {LoginService} loginService - LoginService instance for handling login operations
-   * @param {Router} router - Router instance for navigation
-   * @param {MessageService} messageService - MessageService instance for displaying messages
-   */
-  constructor(private fb: FormBuilder, private loginService: LoginService, private router: Router , private messageService: MessageService) {
+  /**
+ * Constructor for LoginComponent class.
+ *
+ * @param {FormBuilder} fb - FormBuilder instance to create the login form
+ * @param {LoginService} loginService - LoginService instance for handling login operations
+ * @param {Router} router - Router instance for navigation
+ * @param {MessageService} messageService - MessageService instance for displaying messages
+ */
+  constructor(private fb: FormBuilder, private loginService: LoginService, private router: Router, private messageService: MessageService,
+    private secureStorageService: SecureStorageService) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required],
@@ -62,7 +65,14 @@ export class LoginComponent implements OnInit {
           this.loginService.tokenGenerator().subscribe({
             next: (res) => {
               localStorage.setItem('token', res.toString());
-              console.log("Token generated", res);
+              this.secureStorageService.setEncryptedItem('sessionData', {
+                administrator: response.body.administrator,
+                attributes: response.body.attributes,
+                id:response.body.id
+              });
+              //this is a generate token for local storage
+              //the token  genreate in back end dont have acces to decode the token
+              this.secureStorageService.setEncryptedItem('localdata', res.toString());
               this.router.navigate(['/map']);
             },
             error: (err) => {
@@ -79,7 +89,5 @@ export class LoginComponent implements OnInit {
         console.info('Login complete');
       }
     });
-
-    console.log('Form Submitted', this.loginForm.value);
   }
 }

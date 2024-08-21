@@ -1,30 +1,43 @@
 <div class="device-list">
-  <h2>Devices <p-button class="settings-button" icon="pi pi-cog" (click)="openSettings()" /> </h2>
-  <p-scroller
-    [items]="devices"
-    [itemSize]="50"
-    scrollHeight="12rem"
-    styleClass="border-1 surface-border"
+  <h2>Devices
+    <p-button class="settings-button" icon="pi pi-cog"  pTooltip="Settings" (click)="openSettings()" />
+  </h2>
+  <p-scroller [items]="devices" [itemSize]="50" scrollHeight="12rem" styleClass="border-1 surface-border"
     [style]="{'width': '100%', 'height': '12rem'}">
     <ng-template pTemplate="item" let-device let-options="options">
-      <div pTooltip="Car Currently is {{device.status}}" class="device-list-item" [ngClass]="{ 'surface-ground': options.odd }" (click)="onDeviceClick(device)">
+      <input type="checkbox" [checked]="isDeviceSelected(device)" (change)="onCheckboxChange(device, $event)" />
+      <div pTooltip="Car Currently is {{device.status}}" class="device-list-item"
+        [ngClass]="{ 'surface-ground': options.odd }" (click)="onDeviceClick(device)">
         <img src="../../../assets/images/icons8-voiture-50.png" alt="Car Icon" class="device-icon">
         <span>{{ device.name }}</span>
-        <img *ngIf="device.status === 'online'" src="../../../assets/images/wifi-online.png" alt="Online Wi-Fi Icon" class="wifi-icon">
-        <img *ngIf="device.status === 'offline'" src="../../../assets/images/wifi-offline.png" alt="Offline Wi-Fi Icon" class="wifi-icon">
-        <img *ngIf="device.status === 'unknown'" src="../../../assets/images/wifi-x.png" alt="Unknown Wi-Fi Icon" class="wifi-icon">
+        <img *ngIf="device.status === 'online'" src="../../../assets/images/wifi-online.png" alt="Online Wi-Fi Icon"
+          class="wifi-icon">
+        <img *ngIf="device.status === 'offline'" src="../../../assets/images/wifi-offline.png" alt="Offline Wi-Fi Icon"
+          class="wifi-icon">
+        <img *ngIf="device.status === 'unknown'" src="../../../assets/images/wifi-x.png" alt="Unknown Wi-Fi Icon"
+          class="wifi-icon">
       </div>
     </ng-template>
   </p-scroller>
   <div *ngIf="parkingEvents.length > 0" class="parking-history">
-  <h2>Parking History</h2>
+    <h2>Parking History</h2>
     <ul>
-      <li *ngFor="let parking of parkingEvents">
-        <strong>Date:</strong> {{ parking.deviceTime }}<br>
-        <strong>Location:</strong> {{ parking.address }}<br>
-        <strong>Duration:</strong> {{ formatDuration(parking.durationInMinutes) }}
+      <li *ngFor="let parking of parkingEvents; let i = index">
+        <div class="parking-details">
+          <strong>Date:</strong> {{ parking.deviceTime }}<br />
+          <strong>Location:</strong> {{ parking.address }}<br />
+          <strong>Duration:</strong> {{ formatDuration(parking.durationInMinutes) }}
+        </div>
+        <div class="parking-separator" *ngIf="i < parkingEvents.length - 1">
+          <hr />
+          <div class="distance-details">
+            <strong>Distance to next parking:</strong>
+            {{ parking.distanceFromLastParking | number: '1.2-2' }} km<br />
+            <strong>Time to next parking:</strong>
+            {{ parking.timeFromLastParking | number: '1.0-0' }} minutes
+          </div>
+        </div>
       </li>
     </ul>
   </div>
-
 </div>

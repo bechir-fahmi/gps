@@ -1,72 +1,62 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { NotificationServiceService } from '../../../Services/notifications/notification-service.service';
 import { NotificationPayload } from '../../../shared/models/notification-payload';
-import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-add-edit-notification',
   templateUrl: './add-edit-notification.component.html',
-  styleUrl: './add-edit-notification.component.css',
-  providers: [MessageService],
+  styleUrls: ['./add-edit-notification.component.css']
 })
 export class AddEditNotificationComponent {
   @Input() displayDialog: boolean = false;
-  @Input() notification: NotificationPayload = {
-    id: 0,
-    attributes: {},
-    calendarId: 0,
-    always: false,
-    type: '',
-    commandId: 0,
-    notificators: '',
-  };
-  @Output() notificationSaved = new EventEmitter<void>();
+  @Input() notification: NotificationPayload | null = null;
+
+  @Output() notificationSaved = new EventEmitter<NotificationPayload>();
   @Output() dialogClosed = new EventEmitter<void>();
 
-  constructor(
-    private notificationService: NotificationServiceService,
-    private messageService: MessageService
-  ) {}
+  notificationTypes: { label: string, value: string }[] = [];
+  manualTypes: string[] = [
+    'vibration', 'high speed', 'low voltage', 'low battery',
+    'turn off', 'turn on', 'entering virtual perimeter',
+    'leaving virtual perimeter', 'accident', 'towing'
+  ];
+  selectedManualType: string | null = null;
+  isEditMode: boolean = false;
+
+  ngOnInit(): void {
+    this.fetchNotificationTypes();
+
+    if (this.notification) {
+      this.isEditMode = !!this.notification.id;
+      if (this.isEditMode && this.notification.type === 'alarm') {
+        this.selectedManualType = this.notification.attributes['alarm'] || null;
+      }
+      else{
+        this.selectedManualType = null;
+        this.notification.attributes['alarm'] = null;
+      }
+    }
+  }
+
+  ngOnChanges(): void {
+    if (this.notification) {
+      this.isEditMode = !!this.notification.id;
+      if (this.isEditMode && this.notification.type === 'alarm') {
+        this.selectedManualType = this.notification.attributes['alarm'] || null;
+      } else{
+        this.selectedManualType = null;
+        this.notification.attributes['alarm'] = null;
+      }
+    }
+  }
+
+  fetchNotificationTypes(): void {
+    this.notificationTypes = this.manualTypes.map(type => ({ label: type, value: type }));
+  }
 
   saveNotification(): void {
-    if (this.notification.id === 0) {
-      this.notificationService.createNotification(this.notification).subscribe(
-        () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Notification added successfully.'
-          });
-          this.notificationSaved.emit();
-          this.closeDialog();
-        },
-        (error) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to add notification.'
-          });
-        }
-      );
-    } else {
-      this.notificationService.updateNotification(this.notification).subscribe(
-        () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Notification updated successfully.'
-          });
-          this.notificationSaved.emit();
-          this.closeDialog();
-        },
-        (error) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to update notification.'
-          });
-        }
-      );
+    if (this.notification) {
+      this.notification.attributes['alarm'] = this.selectedManualType || '';
+      this.notificationSaved.emit(this.notification);
     }
   }
 

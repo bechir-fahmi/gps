@@ -224,7 +224,7 @@ iframe {
   height: 100%;
   top: 0;
   left: 0;
-  background-color: rgba(54,84,99,0.7);
+  background-color: rgba(255, 255, 255, 0);
 }
 
 
@@ -3502,3 +3502,4 @@ input.input100 {
   font-size: 12px;
   margin-top: 5px;
 }
+

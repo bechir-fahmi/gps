@@ -2,7 +2,7 @@ export interface Device {
   id: number;
   attributes: any;
   groupId: number;
-  calendarId: number;
+  calendarId?: number;
   name: string;
   uniqueId: string;
   status: string;
@@ -13,5 +13,5 @@ export interface Device {
   contact: string | null;
   category: string | null;
   disabled: boolean;
-  expirationTime: string | null;
+  expirationTime?: string | null;
 }

@@ -1,24 +1,18 @@
-<p-dialog header="Geofence Map" [(visible)]="displayDialog" [modal]="true" [closable]="true" [style]="{ width: '80vw', height: '80vh' }" [contentStyle]="{ 'max-height': '75vh', 'overflow-y': 'auto' }" (onHide)="closeDialog()">
+<p-dialog header="Geofence Map" [(visible)]="displayDialog" [modal]="true" [closable]="true"
+  [style]="{ width: '90vw', height: '900vh' }" [contentStyle]="{ 'max-height': '75vh', 'overflow-y': 'auto' }"
+  (onHide)="closeDialog()">
   <div class="p-fluid">
-    <div class="p-field">
+    <div class="p-field input-spacing">
       <label for="name">Name</label>
-      <input id="name" type="text" pInputText [(ngModel)]="geofence.name" *ngIf="geofence" [disabled]="mode === 'view'" />
-    </div>
-    <div class="p-field">
-      <label for="description">Description</label>
-      <input id="description" type="text" pInputText [(ngModel)]="geofence.description" *ngIf="geofence" [disabled]="mode === 'view'" />
+      <input id="name" type="text" pInputText [(ngModel)]="geofence.name" *ngIf="geofence"
+        [disabled]="mode === 'view'" />
     </div>
   </div>
-  <div #mapContainer id="map" style="height: 60%; width: 100%;"></div>
-  <p-footer>
-    <p-button label="Cancel" icon="pi pi-times" (click)="closeDialog()"></p-button>
-    <p-button *ngIf="mode === 'edit'" label="Save" icon="pi pi-check" (click)="saveGeofence()" [disabled]="!geofence"></p-button>
-    <p-button
-  *ngIf="mode === 'edit'"
-  label="Remove Shape"
-  icon="pi pi-trash"
-  (click)="removeSelectedOverlay()"
-  [disabled]="!selectedOverlay">
-</p-button>
+  <div #mapContainer id="map" style="height: 80%; width: 100%;"></div>
+  <p-footer *ngIf="mode === 'edit'">
+    <p-button label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times" (click)="closeDialog()"></p-button>
+    <p-button label="Save" [disabled]="geofence?.name === ''||geofence?.area?.length === 0" icon="pi pi-check" (click)="saveGeofence()"></p-button>
+    <p-button label="Remove Shape" icon="pi pi-trash" (click)="removeSelectedOverlay()" [disabled]="!selectedOverlay">
+    </p-button>
   </p-footer>
 </p-dialog>

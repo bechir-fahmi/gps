@@ -11,12 +11,12 @@
   </button>
 </div> -->
 <div class="replay-controls">
-  <p-button (click)="onStop()" icon="pi pi-stop-circle" />
-  <p-button (click)="onPlay()" icon="pi pi-play-circle" />
-  <p-button (click)="onPause()" icon="pi pi-pause-circle" />
-  <p-button (click)="onForward()" icon="pi pi-forward" />
-  <p-button (click)="onRewind()" icon="pi pi-backward" />
-  <p-button (click)="onClose()" icon="pi pi-times-circle" />
+  <p-button (click)="onStop()"  pTooltip="Stop" icon="pi pi-stop-circle" />
+  <p-button (click)="onPlay()"  pTooltip="Play" icon="pi pi-play-circle" />
+  <p-button (click)="onPause()" pTooltip="Pause" icon="pi pi-pause-circle" />
+  <p-button (click)="onForward()" pTooltip="Forward" icon="pi pi-forward" />
+  <p-button (click)="onRewind()" pTooltip="Rewind" icon="pi pi-backward" />
+  <p-button (click)="onClose()" pTooltip="Close" icon="pi pi-times-circle" />
   <div class="seek-bar">
     <input type="range" min="0" [max]="maxPosition" [(ngModel)]="currentPosition" (input)="onSeek()">
     <div>{{formatTime(currentPosition)}} / {{formatTime(maxPosition)}}</div>

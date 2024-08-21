@@ -1,0 +1,7 @@
+/* Style for the table caption */
+.table-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+

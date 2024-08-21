@@ -5,20 +5,20 @@ export interface User {
   phone: string;
   readonly: boolean;
   administrator: boolean;
-  map: string;
+  map: string | null; // Allow null
   latitude: number;
   longitude: number;
   zoom: number;
-  password: string;
-  twelveHourFormat: boolean;
-  coordinateFormat: string;
+  password: string | null; // Allow null
+  // twelveHourFormat: boolean;
+  coordinateFormat: string | null; // Allow null
   disabled: boolean;
-  expirationTime: string; // in ISO 8601 format
+  expirationTime: string | null; // Allow null
   deviceLimit: number;
   userLimit: number;
   deviceReadonly: boolean;
   limitCommands: boolean;
   fixedEmail: boolean;
-  poiLayer: string;
+  poiLayer: string | null; // Allow null
   attributes: Record<string, any>;
 }

@@ -1,0 +1,83 @@
+/* Ensure the SpeedDial button is sized appropriately */
+.p-speeddial {
+  width: 10px; /* Adjust as needed */
+  height: 10px; /* Adjust as needed */
+}
+
+/* Adjust the size of SpeedDial items */
+.p-speeddial .p-speeditem {
+  width: 10px; /* Adjust as needed */
+  height: 10px; /* Adjust as needed */
+}
+
+/* Style for the SpeedDial container within each row */
+.speeddial-container {
+  position: relative; /* Position relative to the cell */
+  display: flex; /* Use flexbox for alignment */
+  align-items: center; /* Align items vertically centered */
+  justify-content: center; /* Center items horizontally */
+  height: 50px; /* Set a fixed height for the container */
+  width: 100%; /* Take full width of the cell */
+}
+
+/* Ensure the SpeedDial button is positioned within the cell */
+.speeddial-container .p-speeddial {
+  position: relative; /* Keep relative positioning */
+  margin: 0; /* Remove margin */
+  padding: 0; /* Remove padding */
+}
+
+/* Adjust the width of the Actions column */
+table th:nth-child(2),
+table td:nth-child(2) {
+  width: 120px; /* Adjust as needed */
+  text-align: center; /* Center align the content */
+}
+
+/* Optional: Adjust table styles for better appearance */
+table {
+  width: 100%; /* Full width of the container */
+  border-collapse: collapse; /* Remove space between borders */
+}
+
+table th, table td {
+  padding: 8px; /* Padding for table cells */
+  border: 1px solid #ddd; /* Light border for cells */
+}
+
+table th {
+  background-color: #f4f4f4; /* Light gray background for headers */
+  text-align: left; /* Align header text to the left */
+}
+
+table td {
+  background-color: #fff; /* White background for table cells */
+}
+
+/* Adjust the appearance of table rows on hover */
+table tr:hover {
+  background-color: #f1f1f1; /* Light gray background on hover */
+}
+
+/* Style for the container of the table and its contents */
+.grid {
+  padding: 20px; /* Padding around the grid */
+}
+
+.card {
+  border-radius: 8px; /* Rounded corners for the card */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Light shadow for the card */
+  overflow: hidden; /* Ensure contents do not overflow */
+}
+
+/* Optional: Adjust styling for empty message */
+table .emptymessage {
+  text-align: center; /* Center align empty message text */
+  color: #888; /* Light gray color for empty message text */
+}
+
+/* Debug styles - remove or comment out in production */
+.speeddial-container-debug {
+  border: 2px solid red; /* Border for debugging */
+  background-color: rgba(255, 255, 0, 0.3); /* Background color for debugging */
+}

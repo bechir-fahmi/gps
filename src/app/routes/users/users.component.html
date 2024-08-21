@@ -2,6 +2,7 @@
   <div class="col-12">
     <div class="card">
       <p-table
+        #dt1
         [value]="users"
         [loading]="loading"
         [rows]="10"
@@ -10,9 +11,10 @@
         [totalRecords]="users.length"
         responsiveLayout="scroll"
         scrollHeight="400px"
+        [globalFilterFields]="['name', 'email', 'phone']"
       >
         <ng-template pTemplate="caption">
-          <div>
+          <div class="table-caption">
             <p-button
               pRipple
               type="button"
@@ -21,6 +23,10 @@
               styleClass="p-button-outlined"
               (click)="showDialogToAdd()"
             ></p-button>
+            <span class="p-input-icon-left ml-auto">
+              <i class="pi pi-search"></i>
+              <input pInputText type="text" [(ngModel)]="searchValue" (input)="onInput($event)" placeholder="Search keyword" />
+            </span>
           </div>
         </ng-template>
 
@@ -40,6 +46,8 @@
             <td>{{ user.phone }}</td>
             <td>
               <p-button
+                [disabled]="isTechnical"
+                pTooltip="Edit this User"
                 pRipple
                 type="button"
                 icon="pi pi-pencil"
@@ -47,11 +55,20 @@
                 (click)="showDialogToEdit(user)"
               ></p-button>
               <p-button
+                pTooltip="Delete this User"
                 pRipple
                 type="button"
                 icon="pi pi-trash"
                 styleClass="p-button-outlined"
                 (click)="deleteUser(user)"
+              ></p-button>
+              <p-button
+                pTooltip="Link Devices for this user"
+                pRipple
+                type="button"
+                icon="pi pi-link"
+                styleClass="p-button-outlined"
+                (click)="linkUser(user)"
               ></p-button>
             </td>
           </tr>
@@ -74,5 +91,10 @@
   (onSave)="saveUser($event)"
   (onClose)="displayDialog = false"
 ></app-add-edit-user>
-
+<app-link-user-dialog
+  [display]="displayLinkDialog"
+  [userId]="selectedUser?.id"
+  (onClose)="displayLinkDialog = false"
+  (linkDevicesEvent)="onLinkDevicesEvent($event)">
+</app-link-user-dialog>
 <p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>

@@ -1,4 +1,12 @@
 #map {
-  height: calc(100% - 50px); /* Adjust this to your needs */
+  height: calc(100% - 50px);
   width: 100%;
 }
+.input-spacing {
+  margin-bottom: 20px;
+}
+
+.p-dialog .p-fluid {
+  padding: 10px;
+}
+

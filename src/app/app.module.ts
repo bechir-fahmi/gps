@@ -49,6 +49,16 @@ import { GeofenceMapDialogComponent } from './shared/component/geofence-map-dial
 import { MenuModule } from 'primeng/menu';
 import { UsersComponent } from './routes/users/users.component';
 import { AddEditUserComponent } from './routes/users/add-edit-user/add-edit-user.component';
+import { AccordionModule } from 'primeng/accordion';
+import { DeviceManagementComponent } from './routes/device-management/device-management.component';
+import { AddEditDeviceComponent } from './routes/device-management/add-edit-device/add-edit-device.component';
+import { LinkUserDialogComponent } from './routes/users/link-user-dialog/link-user-dialog.component';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { SpeedDialModule } from 'primeng/speeddial';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { InputMaskModule } from 'primeng/inputmask';
+import { ReportingComponent } from './routes/reporting/reporting.component';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -70,6 +80,10 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     GeofenceMapDialogComponent,
     UsersComponent,
     AddEditUserComponent,
+    DeviceManagementComponent,
+    AddEditDeviceComponent,
+    LinkUserDialogComponent,
+    ReportingComponent,
   ],
   imports: [
     BrowserModule,
@@ -100,7 +114,13 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     CheckboxModule,
     InputTextModule,
     FloatLabelModule,
-    MenuModule
+    MenuModule,
+    AccordionModule,
+    MultiSelectModule,
+    RadioButtonModule,
+    SpeedDialModule,
+    InputTextareaModule,
+    InputMaskModule
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())

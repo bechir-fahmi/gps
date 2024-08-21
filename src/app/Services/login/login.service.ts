@@ -20,6 +20,14 @@ export class LoginService {
    * @return {Observable<HttpResponse<any>>} An observable of the HTTP response for the login operation.
    */
   login(data: LoginDTO): Observable<HttpResponse<any>> {
+    if(data.username.indexOf("@") == -1){
+      data.username+="@amena.com"
+    }
+    else{
+      data.email=data.username
+    }
+    console.log("login",data);
+
     const params = new HttpParams()
       .set('email', data.email || data.username)
       .set('password', data.password);
@@ -31,7 +39,6 @@ export class LoginService {
       tap(response => {
         const authHeader = `Basic ${encodeBasicAuth(data.email || data.username, data.password)}`;
         localStorage.setItem('tokenbasic', authHeader);
-        console.log("login success", response.body);
       }),
       catchError(error => {
         return throwError(() => error);
@@ -67,7 +74,6 @@ export class LoginService {
       responseType: 'text' as 'json',
     }).pipe(
       tap(response => {
-        console.log("Token generated successfully", response);
         localStorage.setItem('token',JSON.stringify(response));
       }),
       catchError(error => {

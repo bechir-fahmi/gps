@@ -10,7 +10,6 @@ export class AppComponent {
   title = 'amena';
 constructor(private server:ServerService) { }
   ngOnInit() {
-    console.log('App component initialized');
     this.server.server().subscribe((res)=>{console.log(res)})
   }
 }

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService,MenuItem } from 'primeng/api';
 import { GeofenceService } from '../../Services/geofence/geofence.service';
 import { Geofence } from '../../shared/models/geofence';
 
@@ -15,14 +15,36 @@ export class GeofenceComponent {
   displayMapDialog: boolean = false;
   mapDialogMode: 'view' | 'edit' = 'edit';
   loading: boolean = true;
-
+  items: MenuItem[] | null;
   constructor(
     private geofenceService: GeofenceService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-  ) { }
+  ) { this.items = [
+    {
+        icon: 'pi pi-pencil',
+        command: () => {
+            this.messageService.add({ severity: 'info', summary: 'Add', detail: 'Data Added' });
+        }
+    },
+    {
+        icon: 'pi pi-refresh',
+        command: () => {
+            this.messageService.add({ severity: 'success', summary: 'Update', detail: 'Data Updated' });
+        }
+    },
+    {
+        icon: 'pi pi-trash',
+        command: () => {
+            this.messageService.add({ severity: 'error', summary: 'Delete', detail: 'Data Deleted' });
+        }
+    },
+
+
+];}
 
   ngOnInit(): void {
+
     this.loadGeofences();
   }
 

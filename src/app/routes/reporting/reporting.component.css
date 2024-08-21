@@ -1,0 +1,28 @@
+.p-field {
+  margin-bottom: 1em;
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+}
+
+.p-field label {
+  font-size: 0.875rem;
+  margin-bottom: 0.5em;
+}
+
+.p-calendar, .p-multiSelect {
+  width: 100%;
+  max-width: 200px;
+  padding: 0.5em;
+}
+
+.small-button {
+  font-size: 0.875rem !important;
+  padding: 0.5em 1em !important;
+  max-width: 250px;
+  display: inline-block;
+}
+
+.p-footer {
+  margin-top: 1em;
+}

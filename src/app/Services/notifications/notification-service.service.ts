@@ -8,6 +8,14 @@ import { NotificationPayload } from '../../shared/models/notification-payload';
   providedIn: 'root'
 })
 export class NotificationServiceService {
+  getNotificationTypes() {
+    return this._http.get<NotificationPayload[]>(`${environment.API}/api/notifications/types`)
+      .pipe(
+        catchError(error => {
+          return throwError(() => error);
+        })
+      );
+  }
 
   constructor(private _http: HttpClient) { }
 

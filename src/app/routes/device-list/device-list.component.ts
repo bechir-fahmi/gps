@@ -13,47 +13,37 @@ export class DeviceListComponent implements OnInit {
 
   @Input() parkingEvents: any[] = [];
   @Output() deviceSelected: EventEmitter<Device> = new EventEmitter<Device>();
+  selectedDevices: Set<Device> = new Set();
+  @Output() devicesSelected: EventEmitter<Device[]> = new EventEmitter<Device[]>();
 
   constructor(private deviceService: DeviceService,private router: Router) { }
-  /**
-   * Initializes the component and retrieves a list of devices from the device service.
-   *
-   * This function subscribes to the `getDevices()` method of the `deviceService` and assigns the resulting devices to the `devices` property of the component.
-   *
-   * @return {void} This function does not return a value.
-   */
+
   ngOnInit(): void {
     this.deviceService.getDevices().subscribe(devices => {
       this.devices = devices;
     });
   }
+  onCheckboxChange(device: Device, event: any): void {
+    if (event.target.checked) {
+      this.selectedDevices.add(device);
+    } else {
+      this.selectedDevices.delete(device);
+    }
+    this.devicesSelected.emit(Array.from(this.selectedDevices));
+  }
 
-    /**
-   * Returns the status of a device with the first letter capitalized.
-   *
-   * @param {Device} device - The device object to get the status from.
-   * @return {string} The status of the device with the first letter capitalized.
-   */
+  isDeviceSelected(device: Device): boolean {
+    return this.selectedDevices.has(device);
+  }
   getStatus(device: Device): string {
     return device.status.charAt(0).toUpperCase() + device.status.slice(1);
   }
 
-    /**
-   * Emits the selected device when a device is clicked.
-   *
-   * @param {Device} device - The device that was clicked.
-   * @return {void} This function does not return a value.
-   */
+
   onDeviceClick(device: Device): void {
     this.deviceSelected.emit(device);
   }
 
-    /**
-   * Formats the given number of minutes into a human-readable duration string.
-   *
-   * @param {number} minutes - The number of minutes to format.
-   * @return {string} The formatted duration string.
-   */
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);

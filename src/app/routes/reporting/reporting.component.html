@@ -1,0 +1,36 @@
+<div class="p-fluid">
+  <div class="p-field">
+    <label for="devices">Select Devices</label>
+    <p-multiSelect id="devices" [options]="devices" [(ngModel)]="selectedDevices" optionLabel="name" filter="true"
+      placeholder="Select devices">
+      <ng-template let-device pTemplate="item">
+        {{ device.name }} ({{ device.uniqueId }})
+      </ng-template>
+      <ng-template let-device pTemplate="selectedItem">
+        {{ device.name }} ({{ device.uniqueId }})
+      </ng-template>
+    </p-multiSelect>
+  </div>
+
+  <!-- Start Date -->
+  <div class="p-field">
+    <label for="startDate">Start Date</label>
+    <p-calendar id="startDate" [(ngModel)]="startDate" dateFormat="dd/mm/yy" [showIcon]="true" [showOnFocus]="false"
+      [monthNavigator]="true"></p-calendar>
+  </div>
+
+  <!-- End Date -->
+  <div class="p-field">
+    <label for="endDate">End Date</label>
+    <p-calendar id="endDate" [(ngModel)]="endDate" dateFormat="dd/mm/yy" [showIcon]="true" [showOnFocus]="false"
+      [monthNavigator]="true"></p-calendar>
+  </div>
+
+  <p-footer>
+    <p-button class="small-button" label="Generate Report" icon="pi pi-check"
+              [disabled]="!selectedDevices || selectedDevices.length === 0 || !startDate || !endDate"
+              (click)="generateReport()">
+    </p-button>
+  </p-footer>
+  <p-toast></p-toast>
+</div>

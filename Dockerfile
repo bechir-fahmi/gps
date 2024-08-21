@@ -15,6 +15,12 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Copy the script to modify the CSS
+COPY scripts/modify-theme.sh /modify-theme.sh
+
+# Run the script to modify the CSS file
+RUN chmod +x /modify-theme.sh && /modify-theme.sh
+
 # Build the Angular application
 RUN npm run build
 

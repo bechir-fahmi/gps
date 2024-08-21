@@ -1,30 +1,49 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { User } from '../../shared/models/user';
 import { UserService } from '../../Services/users/user.service';
+import { SecureStorageService } from '../../Services/storage/secure-storage.service';
+import { Table } from 'primeng/table';
 
 @Component({
   selector: 'app-users',
   templateUrl: './users.component.html',
-  styleUrl: './users.component.css',
+  styleUrls: ['./users.component.css'],
   providers: [MessageService, ConfirmationService],
 })
 export class UsersComponent {
- users: User[] = [];
+  @ViewChild('dt1') dt1!: Table;
+  users: User[] = [];
   loading: boolean = true;
   selectedUser: User | null = null;
   displayDialog: boolean = false;
-
+  displayLinkDialog: boolean = false;
+  isTechnical: any;
+  isAdmin: any;
+  searchValue: string | undefined;
   constructor(
     private userService: UserService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private secureStorageService: SecureStorageService
   ) { }
 
   ngOnInit(): void {
     this.loadUsers();
+    this.initializeUserRole();
   }
 
+  initializeUserRole(): void {
+    const sessionData = this.secureStorageService.getDecryptedItem('sessionData');
+    if (sessionData) {
+      this.isAdmin = sessionData.administrator;
+      this.isTechnical = sessionData.attributes.isTechnical;
+    }
+  }
+
+ngOnChanges(): void {
+  this.loadUsers();
+}
   loadUsers(userId?: string): void {
     this.userService.getUsers(userId).subscribe(
       (data: User[]) => {
@@ -50,22 +69,21 @@ export class UsersComponent {
       phone: '',
       readonly: false,
       administrator: false,
-      map: '',
+      map: null,
       latitude: 0,
       longitude: 0,
       zoom: 0,
       password: '',
-      twelveHourFormat: false,
-      coordinateFormat: '',
+      coordinateFormat: null,
       disabled: false,
-      expirationTime: '',
+      expirationTime: null,
       deviceLimit: -1,
       userLimit: 0,
       deviceReadonly: false,
       limitCommands: false,
       fixedEmail: false,
-      poiLayer: '',
-      attributes: {}
+      poiLayer: null,
+      attributes: { isTechnical: false }
     };
     this.displayDialog = true;
   }
@@ -77,6 +95,12 @@ export class UsersComponent {
 
   saveUser(user: User): void {
     if (user.id === 0) {
+      if (user.attributes['isTechnical'] === true) {
+        user.administrator = true;
+      }
+      if (user.email === '' || user.email === null || user.email === undefined) {
+        user.email = user.name + '@amena.com';
+      }
       this.userService.createUser(user).subscribe(
         (newUser) => {
           this.users.unshift(newUser);
@@ -85,6 +109,7 @@ export class UsersComponent {
             summary: 'Success',
             detail: 'User added.',
           });
+          this.clearFilter();
         },
         (error) => {
           this.messageService.add({
@@ -104,6 +129,7 @@ export class UsersComponent {
             summary: 'Success',
             detail: 'User updated.',
           });
+          this.clearFilter();
         },
         (error) => {
           this.messageService.add({
@@ -145,5 +171,32 @@ export class UsersComponent {
         this.messageService.add({ severity: 'info', summary: 'Cancelled', detail: 'You have cancelled the operation' });
       }
     });
+  }
+
+  linkUser(user: User): void {
+    if (user.id !== undefined) {
+      this.selectedUser = user;
+      this.displayLinkDialog = true;
+    } else {
+      console.error('User ID is undefined');
+    }
+  }
+
+  onLinkDevicesEvent(event: { success: boolean, message: string }): void {
+    this.messageService.add({
+      severity: event.success ? 'success' : 'error',
+      summary: event.success ? 'Success' : 'Error',
+      detail: event.message,
+    });
+    this.displayLinkDialog = false;
+  }
+  clearFilter(): void {
+    if (this.dt1) {
+      this.dt1.reset(); // Clear table filter and pagination
+    }
+  }
+  onInput(event: Event) {
+    const inputElement = event.target as HTMLInputElement;
+    this.dt1.filterGlobal(inputElement.value, 'contains');
   }
 }

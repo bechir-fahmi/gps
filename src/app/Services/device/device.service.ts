@@ -25,14 +25,7 @@ export class DeviceService {
     this.listenForPositionUpdates();
    }
 
-  //  private listenForPositionUpdates() {
-  //   this.wsService.messages$.subscribe(message => {
-  //     if (message.positions) {
-  //       console.log("message positions",message.positions);
-  //       this.positionsSubject.next(message.positions);
-  //     }
-  //   });
-  // }
+
   /**
    * Listens for position updates from the WebSocket service and emits the positions through the positionsSubject.
    *
@@ -58,8 +51,24 @@ export class DeviceService {
    *
    * @return {Observable<Device[]>} Observable of Device array
    */
-  getDevices(): Observable<Device[]> {
-    return this._http.get<Device[]>(`${environment.API}/api/devices`,
+  getDevices(params?: { all?: boolean; userId?: number; id?: number; uniqueId?: string }): Observable<Device[]> {
+    let httpParams = new HttpParams();
+
+    if (params) {
+      if (params.all !== undefined) {
+        httpParams = httpParams.set('all', params.all.toString());
+      }
+      if (params.userId !== undefined) {
+        httpParams = httpParams.set('userId', params.userId.toString());
+      }
+      if (params.id !== undefined) {
+        httpParams = httpParams.set('id', params.id.toString());
+      }
+      if (params.uniqueId !== undefined) {
+        httpParams = httpParams.set('uniqueId', params.uniqueId);
+      }
+    }
+    return this._http.get<Device[]>(`${environment.API}/api/devices`,{ params: httpParams }
   )
       .pipe(
         catchError(error => {
@@ -119,4 +128,15 @@ export class DeviceService {
     );
   }
 
+  updateDevice(device: Device): Observable<Device> {
+    return this._http.put<Device>(`${environment.API}/api/devices/${device.id}`, device);
+  }
+
+  deleteDevice(id: number): Observable<void> {
+    return this._http.delete<void>(`${environment.API}/api/devices/${id}`);
+  }
+
+  createDevice(device: Device): Observable<Device> {
+    return this._http.post<Device>(`${environment.API}/api/devices`, device);
+  }
 }

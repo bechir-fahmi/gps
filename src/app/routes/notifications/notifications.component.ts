@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NotificationServiceService } from '../../Services/notifications/notification-service.service';
-import { Router } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { NotificationPayload } from '../../shared/models/notification-payload';
 
 @Component({
@@ -14,7 +13,6 @@ export class NotificationsComponent implements OnInit {
   notifications: NotificationPayload[] = [];
   loading: boolean = true;
   displayDialog: boolean = false;
-  totalRecords: number = 0;
   selectedNotification: NotificationPayload = {
     id: 0,
     attributes: {},
@@ -28,8 +26,7 @@ export class NotificationsComponent implements OnInit {
   constructor(
     private notificationService: NotificationServiceService,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService,
-    private router: Router
+    private messageService: MessageService
   ) {}
 
   ngOnInit(): void {
@@ -40,7 +37,6 @@ export class NotificationsComponent implements OnInit {
     this.notificationService.getNotifications().subscribe(
       (data: NotificationPayload[]) => {
         this.notifications = data;
-        this.totalRecords = data.length;
         this.loading = false;
       },
       (error) => {
@@ -72,12 +68,49 @@ export class NotificationsComponent implements OnInit {
     this.displayDialog = true;
   }
 
-  onNotificationSaved(): void {
-    this.loadNotifications();
-  }
-
-  onDialogClosed(): void {
-    this.displayDialog = false;
+  saveNotification(notification: NotificationPayload): void {
+    if (notification.id === 0) {
+      this.notificationService.createNotification(notification).subscribe(
+        () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Notification added successfully.'
+          });
+          this.loadNotifications();
+          this.displayDialog = false; // Close the dialog
+        },
+        (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to add notification.'
+          });
+        }
+      );
+    } else {
+      this.notificationService.updateNotification(notification).subscribe(
+        () => {
+          const index = this.notifications.findIndex(n => n.id === notification.id);
+          if (index !== -1) {
+            this.notifications[index] = { ...notification };
+          }
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Notification updated successfully.'
+          });
+          this.displayDialog = false; // Close the dialog
+        },
+        (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to update notification.'
+          });
+        }
+      );
+    }
   }
 
   deleteNotification(notification: NotificationPayload): void {
@@ -86,8 +119,7 @@ export class NotificationsComponent implements OnInit {
       accept: () => {
         this.notificationService.deleteNotification(notification.id).subscribe(
           () => {
-            this.notifications = this.notifications.filter((n) => n.id !== notification.id);
-            this.totalRecords = this.notifications.length;
+            this.notifications = this.notifications.filter(n => n.id !== notification.id);
             this.messageService.add({
               severity: 'success',
               summary: 'Success',
