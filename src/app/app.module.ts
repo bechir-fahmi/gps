@@ -59,6 +59,8 @@ import { SpeedDialModule } from 'primeng/speeddial';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { InputMaskModule } from 'primeng/inputmask';
 import { ReportingComponent } from './routes/reporting/reporting.component';
+import { LeafletModule } from '@asymmetrik/ngx-leaflet';
+import { LeafletMapComponent } from './routes/map/leaflet-map/leaflet-map.component';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
 }
@@ -84,6 +86,7 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     AddEditDeviceComponent,
     LinkUserDialogComponent,
     ReportingComponent,
+    LeafletMapComponent,
   ],
   imports: [
     BrowserModule,
@@ -120,7 +123,8 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     RadioButtonModule,
     SpeedDialModule,
     InputTextareaModule,
-    InputMaskModule
+    InputMaskModule,
+    LeafletModule
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())

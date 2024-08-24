@@ -1,16 +1,24 @@
+/* General container styles */
 .map-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden; /* Prevent overflow issues */
+}
+
+/* Google Map and Leaflet Map styles */
+google-map,
+#leafletMap {
+  flex: 1;
   height: 100%;
   width: 100%;
-  display: flex;
-  flex-direction: row;
   position: relative;
+  z-index: 1; /* Ensure maps are below controls */
 }
 
-google-map {
-  flex: 1;
-  height: 100vh;
-}
-
+/* Device list container styles */
 .device-list-container {
   width: 300px;
   height: 100vh;
@@ -20,27 +28,18 @@ google-map {
   padding: 10px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
-}
-
-.toggle-button {
-  display: none;
   position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1000;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px;
-  font-size: 20px;
-  cursor: pointer;
+  top: 0;
+  left: 0;
+  z-index: 100; /* Ensure device list is above maps */
 }
 
+/* Toggle and close buttons */
+.toggle-button,
 .close-button {
   display: none;
   position: absolute;
   top: 10px;
-  right: 10px;
   z-index: 1000;
   background-color: #007bff;
   color: white;
@@ -50,21 +49,19 @@ google-map {
   cursor: pointer;
 }
 
+.toggle-button {
+  left: 10px;
+}
+
+.close-button {
+  right: 10px;
+}
+
 @media (max-width: 768px) {
-  .map-container {
-    flex-direction: row;
-  }
-
-  google-map {
-    height: 100vh;
-  }
-
   .device-list-container {
     width: 80%;
     height: 100vh;
     position: fixed;
-    left: 0;
-    top: 0;
     transform: translateX(-100%);
     z-index: 1000;
     transition: transform 0.3s ease;
@@ -74,21 +71,19 @@ google-map {
     transform: translateX(0);
   }
 
-  .toggle-button {
-    display: block;
-  }
-
+  .toggle-button,
   .close-button {
     display: block;
   }
 
   app-replay-controls {
-    left: 10px !important;
-    top: unset !important;
+    left: 50%;
     bottom: 10px;
+    transform: translateX(-50%);
   }
 }
 
+/* Map control buttons */
 .map-buttons {
   position: absolute;
   top: 10px;
@@ -109,20 +104,7 @@ google-map {
   background-color: #0056b3;
 }
 
-/* .info-window-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 10px;
-  border-top: 1px solid #ccc;
-  box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  font-family: Arial, sans-serif;
-} */
+/* Info window styling */
 .info-window-content {
   max-width: 300px !important; /* Force width */
   max-height: 400px !important; /* Force height */
@@ -130,37 +112,6 @@ google-map {
   font-family: Arial, sans-serif !important;
 }
 
-.button-container {
-  display: flex !important;
-  align-items: center !important;
-  margin-bottom: 10px !important;
-}
-
-.button-container .p-button {
-  font-size: 0.9em !important;
-  padding: 5px 10px !important;
-}
-
-.speed-limit {
-  margin-top: 10px !important;
-}
-
-.speed-limit p {
-  display: flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-}
-
-.edit-icon {
-  cursor: pointer !important;
-}
-
-.replay-button {
-  display: block !important;
-  margin-top: 20px !important;
-}
-
-/*new change end here for the device info window*/
 .info-window-content h3 {
   margin: 0;
 }
@@ -191,6 +142,7 @@ google-map {
   background-color: #0056b3;
 }
 
+/* Date picker container styles */
 .date-picker-container {
   background: white;
   padding: 10px;
@@ -206,6 +158,7 @@ google-map {
   margin-bottom: 10px;
 }
 
+/* Video player controls styles */
 .video-player-controls {
   display: flex;
   align-items: center;
@@ -222,21 +175,17 @@ google-map {
   font-size: 24px;
 }
 
-:host {
-  display: block;
-  height: 100%;
-  position: relative;
-}
-
+/* Replay controls styles */
 app-replay-controls {
   position: absolute;
   bottom: 10px;
-  left: 320px; /* Position it next to the device list */
-  z-index: 100;
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center alignment */
+  z-index: 1000; /* High z-index to ensure it stays above the map */
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.9); /* Slightly more opaque for visibility */
   padding: 10px;
   border-radius: 5px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
@@ -255,9 +204,10 @@ app-replay-controls button:hover {
   background: #0056b3;
 }
 
+/* Speedometer container styles */
 #speedometer-container {
   position: absolute;
-  top: 20px;
+  top: 120px;
   right: 20px;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.9);
@@ -268,12 +218,13 @@ app-replay-controls button:hover {
 
 @media (max-width: 768px) {
   #speedometer-container {
-    top: 10px;
+    top: 120px;
     right: 10px;
     padding: 10px;
   }
 }
 
+/* Date/time container styles */
 #datetime-container {
   position: absolute;
   top: 40px;
@@ -287,6 +238,7 @@ app-replay-controls button:hover {
   font-weight: bold;
 }
 
+/* Parking history styles */
 .parking-history {
   margin-top: 20px;
   max-height: 300px;
@@ -306,6 +258,7 @@ app-replay-controls button:hover {
   margin-bottom: 10px;
 }
 
+/* Loading indicator styles */
 .loading-indicator {
   position: fixed;
   top: 50%;
@@ -319,6 +272,7 @@ app-replay-controls button:hover {
   text-align: center;
 }
 
+/* Car details container styles */
 .car-details-container {
   position: absolute;
   bottom: 0;
@@ -337,4 +291,16 @@ app-replay-controls button:hover {
 
 .car-details-container p {
   margin: 0.5em 0;
+}
+
+/* Map switcher container styles */
+.map-switcher {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }

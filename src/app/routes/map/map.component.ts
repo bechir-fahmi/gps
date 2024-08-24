@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit, NgZone, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, NgZone, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { Device } from '../../shared/models/device';
 import { Position } from '../../shared/models/position';
 import { GoogleMap } from '@angular/google-maps';
@@ -12,6 +12,7 @@ import { DateRangeDialogComponent } from '../date-range-dialog/date-range-dialog
 import { ParkingDetectionService } from '../../Services/parking/parking-detection.service';
 import { environment } from '../../../environments/environment';
 import { DeviceListComponent } from '../device-list/device-list.component';
+import * as L from 'leaflet';
 
 declare const ymaps: any;
 
@@ -24,12 +25,16 @@ declare const ymaps: any;
 export class MapComponent implements OnInit, AfterViewInit {
   @ViewChild('mapElement', { static: false }) mapElement!: GoogleMap;
   @ViewChild('deviceList') deviceListComponent!: DeviceListComponent;
+  @ViewChild('leafletMap', { static: false }) leafletMapElement!: ElementRef | undefined;
+
+
   devicesWithPositions: { device: Device, position: Position }[] = [];
   center: google.maps.LatLngLiteral = { lat: 36.8448198, lng: 10.0297012 };
   zoom = 8;
   defaultZoom = 15;
   selectedDevice: { device: Device, position: Position } | null = null;
   googleMap!: google.maps.Map;
+  leafletMap!: L.Map;
   yandexMap: any;
   currentMap: string = 'google';
   mapId: string = "bdf0595e5330a4d";
@@ -45,7 +50,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   stopAutoFollow = false;
   fromDate: string;
   toDate: string;
-  replayMarker: google.maps.marker.AdvancedMarkerElement | null = null;
+  replayGoogleMarker: google.maps.marker.AdvancedMarkerElement | null = null;
   trajectoryPolyline: google.maps.Polyline | null = null;
   trajectoryPath: Position[] = []; // Store full Position objects
   polylines: Map<number, google.maps.Polyline> = new Map();
@@ -60,19 +65,24 @@ export class MapComponent implements OnInit, AfterViewInit {
   private currentReplayIndex: number = 0;
   private parkingMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
   private trajectoryMarkers: google.maps.Marker[] = [];
+  private trajectoryMarkersLeaflet: L.Layer[] = [];
   parkingEvents: any[] = [];
   showParkingHistory = true;
   private apiKey: string = environment.googleMapsApiKey;
   loading = false;
-  gaugeSize: number = 200;
+  gaugeSize: number = 50;
   gaugeThickness: number = 12;
   private lastPanTime: number = 0;
   private throttleDelay: number = 200;
   mapOptions = [
-    { label: 'Google Map', value: 'google' }
+    { label: 'Google Map', value: 'google' },
+    { label: 'Leaflet Map', value: 'leaflet' }
   ];
-  selectedMap = 'google';
+  selectedMap: 'google' | 'leaflet' = 'google';
   markers: Map<number, google.maps.marker.AdvancedMarkerElement | any> = new Map();
+  leafletMarkers: Map<number, L.Marker> = new Map();
+  replayLeafletMarker: L.Marker | null = null;
+  private polyline: L.Polyline | null = null;
   constructor(
     private dialog: MatDialog,
     private deviceService: DeviceService,
@@ -81,7 +91,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     private commandService: CommandsService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-    private parkingDetectionService: ParkingDetectionService
+    private parkingDetectionService: ParkingDetectionService, private cd: ChangeDetectorRef
   ) {
     const today = new Date();
     const lastWeek = new Date(today);
@@ -109,11 +119,66 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.gaugeSize = screenWidth * 0.2;
       this.gaugeThickness = 6;
     } else {
-      this.gaugeSize = 200;
+      this.gaugeSize = 100;
       this.gaugeThickness = 12;
     }
   }
+  // ngAfterViewInit(): void {
+  // this.mapsLoader.load().then(() => {
+  //   this.googleMap = this.mapElement.googleMap!;
+  //   this.initializeMarkers();
+  //   this.infoWindow = new google.maps.InfoWindow();
+  //   window.addEventListener('replayAction', (event: any) => {
+  //     this.ngZone.run(() => {
+  //       const dialogRef = this.dialog.open(DateRangeDialogComponent, {
+  //         width: 'auto',
+  //         data: { fromDate: this.fromDate, toDate: this.toDate }
+  //       });
+  //       dialogRef.afterClosed().subscribe(result => {
+  //         if (result && this.selectedDevice) {
+  //           const { fromDate, toDate } = result;
+  //           this.startReplay(this.selectedDevice.device.id, fromDate, toDate);
+  //         }
+  //       });
+  //     });
+  //   });
+  //   window.addEventListener('stopAction', () => {
+  //     this.ngZone.run(() => {
+  //       if (this.selectedDevice) {
+  //         this.stopCar(this.selectedDevice.device.id, "engineStop");
+  //       }
+  //     });
+  //   });
+  //   window.addEventListener('startAction', () => {
+  //     this.ngZone.run(() => {
+  //       if (this.selectedDevice) {
+  //         this.startCar(this.selectedDevice.device.id, "engineResume");
+  //       }
+  //     });
+  //   });
+  //   this.googleMap.addListener('dragstart', () => {
+  //     this.stopAutoFollow = true;
+  //   });
+  //   this.googleMap.addListener('zoom_changed', () => {
+  //     this.updateMarkerSize();
+  //   });
+  //   this.updateMarkerSize();
+  // }).catch(error => {
+  //   console.error('Google Maps API loading error:', error);
+  // });
+  // }
+
   ngAfterViewInit(): void {
+    if (this.currentMap === 'google') {
+      this.loadGoogleMap();
+    } else if (this.currentMap === 'leaflet') {
+      this.loadLeafletMap();
+    }
+  }
+  get devices(): Device[] {
+    return this.devicesWithPositions.map(d => d.device);
+  }
+  loadGoogleMap(): void {
     this.mapsLoader.load().then(() => {
       this.googleMap = this.mapElement.googleMap!;
       this.initializeMarkers();
@@ -156,30 +221,101 @@ export class MapComponent implements OnInit, AfterViewInit {
     }).catch(error => {
       console.error('Google Maps API loading error:', error);
     });
+
   }
-  get devices(): Device[] {
-    return this.devicesWithPositions.map(d => d.device);
+  async loadLeafletMap(): Promise<void> {
+    if (this.leafletMapElement) {
+      console.log('Leaflet map element found.');
+      this.leafletMap = L.map(this.leafletMapElement.nativeElement).setView([this.center.lat, this.center.lng], this.zoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        minZoom: 10,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(this.leafletMap);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+      this.leafletMap.invalidateSize();
+    } else {
+      console.error('Leaflet map element is not available.');
+    }
   }
-  loadGoogleMap(): void {
-    this.googleMap = this.mapElement.googleMap!;
-    this.initializeMarkers();
-  }
+
+  // initializeMarkers(): void {
+  //   if (this.currentMap === 'google') {
+  //     this.devicesWithPositions.forEach(({ device, position }) => {
+  //       this.addGoogleMarker(device, position);
+  //       this.addGoogleTrajectoryMarker(position);
+  //     });
+  //   }
+  // }
+
   initializeMarkers(): void {
+    console.log("initializeMarkers called");
+
     if (this.currentMap === 'google') {
+      console.log("initializeMarkers google");
+
       this.devicesWithPositions.forEach(({ device, position }) => {
         this.addGoogleMarker(device, position);
         this.addGoogleTrajectoryMarker(position);
       });
+    } else if (this.currentMap === 'leaflet') {
+      console.log("initializeMarkers leaflet");
+      this.initializeLeafletMarkers();
     }
   }
 
+  initializeLeafletMarkers(): void {
+    this.devicesWithPositions.forEach(({ device, position }) => {
+      this.addLeafletMarker(device, position);
+    });
+  }
+
+  addLeafletMarker(device: Device, position: Position): void {
+    const marker = L.marker([position.latitude, position.longitude], {
+      icon: L.divIcon({
+        className: 'custom-div-icon',
+        html: `<img src="${this.carIcon}" style="transform: rotate(${position.course}deg); width: 30px; height: 30px;">`,
+        iconSize: [50, 50],
+        iconAnchor: [25, 25]
+      })
+    }).addTo(this.leafletMap);
+
+    marker.on('click', () => {
+      if (!this.replaying) {
+        this.onMarkerClick({ device, position });
+      }
+    });
+
+    this.leafletMarkers.set(device.id, marker);
+  }
   addGoogleMarker(device: Device, position: Position): void {
+    const existingMarker = this.markers.get(device.id);
+
+    if (existingMarker) {
+      // If the marker already exists, update its position and content
+      existingMarker.position = new google.maps.LatLng(position.latitude, position.longitude);
+      if (existingMarker.content instanceof HTMLElement) {
+        const nameElement = existingMarker.content.querySelector('div:nth-child(1)') as HTMLElement;
+        if (nameElement) {
+          nameElement.innerText = device.name; // Update device name
+        }
+        const icon = existingMarker.content.querySelector('img') as HTMLElement;
+        if (icon) {
+          icon.style.transform = `rotate(${position.course}deg)`; // Update rotation
+        }
+      }
+      return;
+    }
+
+    // Otherwise, create a new marker
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
     const wrapper = document.createElement('div');
     wrapper.style.position = 'relative';
     wrapper.style.display = 'flex';
     wrapper.style.flexDirection = 'column';
     wrapper.style.alignItems = 'center';
+
     const nameElement = document.createElement('div');
     nameElement.innerText = device.name;
     nameElement.style.backgroundColor = 'white';
@@ -189,33 +325,31 @@ export class MapComponent implements OnInit, AfterViewInit {
     nameElement.style.marginBottom = '2px';
     nameElement.style.fontSize = '12px';
     nameElement.style.fontWeight = 'bold';
+
     const icon = document.createElement('img');
     icon.src = this.carIcon;
-    icon.style.width = '50px';
-    icon.style.height = '50px';
+    icon.style.width = '20px';
+    icon.style.height = '20px';
     icon.style.transform = `rotate(${position.course}deg)`;
+
     wrapper.appendChild(nameElement);
     wrapper.appendChild(icon);
+
     const marker = new google.maps.marker.AdvancedMarkerElement({
       map: this.googleMap,
       position: positionLatLng,
       title: device.name,
       content: wrapper,
     });
+
     marker.addListener('click', () => {
       if (!this.replaying) {
         this.onMarkerClick({ device, position });
       }
     });
-    this.markers.set(device.id, marker);
-    const polyline = this.polylines.get(device.id);
-    if (polyline) {
-      const path = polyline.getPath();
-      path.push(positionLatLng);
-    }
-    this.updateMarkerSize();
-  }
 
+    this.markers.set(device.id, marker);
+  }
   addGoogleTrajectoryMarker(position: Position): void {
     const positionLatLng = new google.maps.LatLng(position.latitude, position.longitude);
     const marker = new google.maps.Marker({
@@ -231,17 +365,47 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
     this.trajectoryMarkers.push(marker);
   }
+  // updateMarkers(positions: Position[]): void {
+  //   if (this.replaying) return;
+  //   positions.forEach(position => {
+  //     if (this.currentMap === 'google') {
+  //       this.updateGoogleMarkers(position);
+  //     }
+  //   });
+  // }
+
   updateMarkers(positions: Position[]): void {
     if (this.replaying) return;
     positions.forEach(position => {
       if (this.currentMap === 'google') {
         this.updateGoogleMarkers(position);
+      } else if (this.currentMap === 'leaflet') {
+        this.updateLeafletMarkers(position);
       }
+      this.updateSpeedAndTime(position);
     });
+  }
+
+  updateLeafletMarkers(position: Position): void {
+    const marker = this.leafletMarkers.get(position.deviceId);
+    if (marker) {
+      const newLatLng = L.latLng(position.latitude, position.longitude);
+      marker.setLatLng(newLatLng);
+      const newIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<img src="${this.carIcon}" style="transform: rotate(${position.course}deg); width: 20px; height: 20px;">`,
+        iconSize: [50, 50],
+        iconAnchor: [25, 25]
+      });
+      marker.setIcon(newIcon);
+    } else {
+      const device = this.devicesWithPositions.find(d => d.device.id === position.deviceId)!.device;
+      this.addLeafletMarker(device, position);
+    }
   }
   updateGoogleMarkers(position: Position): void {
     const marker = this.markers.get(position.deviceId);
-    if (marker && marker.device) {
+    if (marker) {
       const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
       marker.position = newPosition;
       if (marker.content instanceof HTMLElement) {
@@ -265,95 +429,328 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.addGoogleTrajectoryMarker(position);
     }
   }
+  // removeAllMarkers(): void {
+  //   this.markers.forEach(marker => {
+  //     if (this.currentMap === 'google') {
+  //       marker.map = null;
+  //       marker.content = null;
+  //     }
+  //   });
+  //   this.markers.clear();
+  //   this.polylines.forEach(polyline => polyline.setMap(null));
+  //   this.polylines.clear();
+  // }
+
   removeAllMarkers(): void {
-    this.markers.forEach(marker => {
-      if (this.currentMap === 'google') {
-        marker.map = null;
-        marker.content = null;
-      }
-    });
-    this.markers.clear();
-    this.polylines.forEach(polyline => polyline.setMap(null));
-    this.polylines.clear();
+    if (this.currentMap === 'google') {
+      this.markers.forEach(marker => {
+        if (marker) {
+          marker.map = null;
+          if (marker.content instanceof HTMLElement) {
+            marker.content.innerHTML = '';
+          }
+        }
+      });
+      this.markers.clear();
+      this.polylines.forEach(polyline => polyline.setMap(null));
+      this.polylines.clear();
+    } else if (this.currentMap === 'leaflet') {
+      this.leafletMarkers.forEach(marker => {
+        if (marker) {
+          this.leafletMap.removeLayer(marker);
+        }
+      });
+      this.leafletMarkers.clear();
+    }
   }
+
+  // async onMarkerClick(selectedDevice: { device: Device, position: Position }) {
+  // this.selectedDevice = selectedDevice;
+  // const position = { lat: selectedDevice.position.latitude, lng: selectedDevice.position.longitude };
+  // if (!this.infoWindow) {
+  //   this.infoWindow = new google.maps.InfoWindow();
+  // }
+  // const content = document.createElement('div');
+  // content.className = 'info-window-content';
+  // content.style.maxWidth = '300px';  // Force width
+  // content.style.maxHeight = '400px'; // Force height
+  // content.style.overflowY = 'auto';  // Enable scrolling if needed
+  // const buttonContainer = document.createElement('div');
+  // buttonContainer.className = 'button-container';
+  // buttonContainer.style.display = 'flex';
+  // buttonContainer.style.alignItems = 'center';
+  // buttonContainer.style.marginBottom = '10px';
+  // const stopButton = document.createElement('button');
+  // stopButton.className = 'p-button p-button-danger';
+  // stopButton.innerHTML = '<span class="p-button-icon pi pi-stop-circle"></span>';
+  // stopButton.style.marginRight = '10px'; // Add space between buttons
+  // stopButton.addEventListener('click', () => window.dispatchEvent(new Event('stopAction')));
+  // buttonContainer.appendChild(stopButton);
+  // const spacer = document.createElement('div');
+  // spacer.style.flexGrow = '1'; // Ensures space is occupied
+  // buttonContainer.appendChild(spacer);
+  // const startButton = document.createElement('button');
+  // startButton.className = 'p-button p-button-primary';
+  // startButton.innerHTML = '<span class="p-button-icon pi pi-play-circle"></span>';
+  // startButton.addEventListener('click', () => window.dispatchEvent(new Event('startAction')));
+  // buttonContainer.appendChild(startButton);
+  // content.appendChild(buttonContainer);
+  // const deviceName = document.createElement('h3');
+  // deviceName.textContent = selectedDevice.device.name;
+  // content.appendChild(deviceName);
+  // const latitude = document.createElement('p');
+  // let response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedDevice.position.latitude},${selectedDevice.position.longitude}&key=${this.apiKey}`);
+  // const data = await response.json();
+  // let address = '';
+  // if (data.status === 'OK' && data.results.length > 0) {
+  //   address = this.getFormattedAddress(data);
+  // } else {
+  //   address = 'Address not found';
+  // }
+  // latitude.innerHTML = `<strong>Address:</strong> ${address}`;
+  // content.appendChild(latitude);
+  // const speedLimitDiv = document.createElement('div');
+  // speedLimitDiv.className = 'speed-limit';
+  // speedLimitDiv.style.marginTop = '10px'; // Space above speed limit
+  // const speedLimitLabel = document.createElement('p');
+  // speedLimitLabel.innerHTML = '<strong>Speed Limit:</strong> ';
+  // const speedLimitValue = selectedDevice.position.speed || 'There no speed limit';
+  // speedLimitLabel.innerHTML += `${speedLimitValue} <i class="pi pi-pencil edit-icon"></i>`;
+  // speedLimitDiv.appendChild(speedLimitLabel);
+  // content.appendChild(speedLimitDiv);
+  // const replayButton = document.createElement('button');
+  // replayButton.className = 'p-button p-button-secondary';
+  // replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span> Replay';
+  // replayButton.style.display = 'block'; // Ensure it's on a new line
+  // replayButton.style.marginTop = '20px'; // Space above replay button
+  // replayButton.addEventListener('click', () => {
+  //   const replayEvent = new CustomEvent('replayAction', {
+  //     detail: { deviceId: selectedDevice.device.id, from: this.fromDate, to: this.toDate }
+  //   });
+  //   window.dispatchEvent(replayEvent);
+  // });
+  // content.appendChild(replayButton);
+  // this.infoWindow.setPosition(position);
+  // this.infoWindow.setContent(content);
+  // this.infoWindow.open(this.googleMap);
+  // }
+
   async onMarkerClick(selectedDevice: { device: Device, position: Position }) {
     this.selectedDevice = selectedDevice;
     const position = { lat: selectedDevice.position.latitude, lng: selectedDevice.position.longitude };
-    if (!this.infoWindow) {
-      this.infoWindow = new google.maps.InfoWindow();
-    }
-    const content = document.createElement('div');
-    content.className = 'info-window-content';
-    content.style.maxWidth = '300px';  // Force width
-    content.style.maxHeight = '400px'; // Force height
-    content.style.overflowY = 'auto';  // Enable scrolling if needed
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'button-container';
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.alignItems = 'center';
-    buttonContainer.style.marginBottom = '10px';
-    const stopButton = document.createElement('button');
-    stopButton.className = 'p-button p-button-danger';
-    stopButton.innerHTML = '<span class="p-button-icon pi pi-stop-circle"></span>';
-    stopButton.style.marginRight = '10px'; // Add space between buttons
-    stopButton.addEventListener('click', () => window.dispatchEvent(new Event('stopAction')));
-    buttonContainer.appendChild(stopButton);
-    const spacer = document.createElement('div');
-    spacer.style.flexGrow = '1'; // Ensures space is occupied
-    buttonContainer.appendChild(spacer);
-    const startButton = document.createElement('button');
-    startButton.className = 'p-button p-button-primary';
-    startButton.innerHTML = '<span class="p-button-icon pi pi-play-circle"></span>';
-    startButton.addEventListener('click', () => window.dispatchEvent(new Event('startAction')));
-    buttonContainer.appendChild(startButton);
-    content.appendChild(buttonContainer);
-    const deviceName = document.createElement('h3');
-    deviceName.textContent = selectedDevice.device.name;
-    content.appendChild(deviceName);
-    const latitude = document.createElement('p');
-    let response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedDevice.position.latitude},${selectedDevice.position.longitude}&key=${this.apiKey}`);
-    const data = await response.json();
-    let address = '';
-    if (data.status === 'OK' && data.results.length > 0) {
-      address = this.getFormattedAddress(data);
-    } else {
-      address = 'Address not found';
-    }
-    latitude.innerHTML = `<strong>Address:</strong> ${address}`;
-    content.appendChild(latitude);
-    const speedLimitDiv = document.createElement('div');
-    speedLimitDiv.className = 'speed-limit';
-    speedLimitDiv.style.marginTop = '10px'; // Space above speed limit
-    const speedLimitLabel = document.createElement('p');
-    speedLimitLabel.innerHTML = '<strong>Speed Limit:</strong> ';
-    const speedLimitValue = selectedDevice.position.speed || 'There no speed limit';
-    speedLimitLabel.innerHTML += `${speedLimitValue} <i class="pi pi-pencil edit-icon"></i>`;
-    speedLimitDiv.appendChild(speedLimitLabel);
-    content.appendChild(speedLimitDiv);
-    const replayButton = document.createElement('button');
-    replayButton.className = 'p-button p-button-secondary';
-    replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span> Replay';
-    replayButton.style.display = 'block'; // Ensure it's on a new line
-    replayButton.style.marginTop = '20px'; // Space above replay button
-    replayButton.addEventListener('click', () => {
-      const replayEvent = new CustomEvent('replayAction', {
-        detail: { deviceId: selectedDevice.device.id, from: this.fromDate, to: this.toDate }
+    if (this.currentMap === 'google') {
+      if (!this.infoWindow) {
+        this.infoWindow = new google.maps.InfoWindow();
+      }
+      const content = document.createElement('div');
+      content.className = 'info-window-content';
+      content.style.maxWidth = '300px';  // Force width
+      content.style.maxHeight = '400px'; // Force height
+      content.style.overflowY = 'auto';  // Enable scrolling if needed
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'button-container';
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.alignItems = 'center';
+      buttonContainer.style.marginBottom = '10px';
+      const stopButton = document.createElement('button');
+      stopButton.className = 'p-button p-button-danger';
+      stopButton.innerHTML = '<span class="p-button-icon pi pi-stop-circle"></span>';
+      stopButton.style.marginRight = '10px'; // Add space between buttons
+      stopButton.addEventListener('click', () => window.dispatchEvent(new Event('stopAction')));
+      buttonContainer.appendChild(stopButton);
+      const spacer = document.createElement('div');
+      spacer.style.flexGrow = '1'; // Ensures space is occupied
+      buttonContainer.appendChild(spacer);
+      const startButton = document.createElement('button');
+      startButton.className = 'p-button p-button-primary';
+      startButton.innerHTML = '<span class="p-button-icon pi pi-play-circle"></span>';
+      startButton.addEventListener('click', () => window.dispatchEvent(new Event('startAction')));
+      buttonContainer.appendChild(startButton);
+      content.appendChild(buttonContainer);
+      const deviceName = document.createElement('h3');
+      deviceName.textContent = selectedDevice.device.name;
+      content.appendChild(deviceName);
+      const latitude = document.createElement('p');
+      let response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedDevice.position.latitude},${selectedDevice.position.longitude}&key=${this.apiKey}`);
+      const data = await response.json();
+      let address = '';
+      if (data.status === 'OK' && data.results.length > 0) {
+        address = this.getFormattedAddress(data);
+      } else {
+        address = 'Address not found';
+      }
+      latitude.innerHTML = `<strong>Address:</strong> ${address}`;
+      content.appendChild(latitude);
+      const speedLimitDiv = document.createElement('div');
+      speedLimitDiv.className = 'speed-limit';
+      speedLimitDiv.style.marginTop = '10px'; // Space above speed limit
+      const speedLimitLabel = document.createElement('p');
+      speedLimitLabel.innerHTML = '<strong>Speed Limit:</strong> ';
+      const speedLimitValue = selectedDevice.device.attributes['speedLimite'] + "km/h" || 'There no speed limit';
+      speedLimitLabel.innerHTML += `${speedLimitValue}`;
+      speedLimitDiv.appendChild(speedLimitLabel);
+      content.appendChild(speedLimitDiv);
+      const replayButton = document.createElement('button');
+      replayButton.className = 'p-button p-button-secondary';
+      replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span> Replay';
+      replayButton.style.display = 'block'; // Ensure it's on a new line
+      replayButton.style.marginTop = '20px'; // Space above replay button
+      replayButton.addEventListener('click', () => {
+        const replayEvent = new CustomEvent('replayAction', {
+          detail: { deviceId: selectedDevice.device.id, from: this.fromDate, to: this.toDate }
+        });
+        window.dispatchEvent(replayEvent);
       });
-      window.dispatchEvent(replayEvent);
-    });
-    content.appendChild(replayButton);
-    this.infoWindow.setPosition(position);
-    this.infoWindow.setContent(content);
-    this.infoWindow.open(this.googleMap);
+      content.appendChild(replayButton);
+      this.infoWindow.setPosition(position);
+      this.infoWindow.setContent(content);
+      this.infoWindow.open(this.googleMap);
+    } else if (this.currentMap === 'leaflet') {
+      const popupContent = document.createElement('div');
+      popupContent.className = 'leaflet-popup-content';
+
+      // Add button container
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'button-container';
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.alignItems = 'center';
+      buttonContainer.style.marginBottom = '10px';
+
+      const stopButton = document.createElement('button');
+      stopButton.className = 'p-button p-button-danger';
+      stopButton.innerHTML = '<span class="p-button-icon pi pi-stop-circle"></span>';
+      stopButton.style.marginRight = '10px'; // Add space between buttons
+      stopButton.onclick = () => window.dispatchEvent(new Event('stopAction'));
+      buttonContainer.appendChild(stopButton);
+
+      const spacer = document.createElement('div');
+      spacer.style.flexGrow = '1'; // Ensures space is occupied
+      buttonContainer.appendChild(spacer);
+
+      const startButton = document.createElement('button');
+      startButton.className = 'p-button p-button-primary';
+      startButton.innerHTML = '<span class="p-button-icon pi pi-play-circle"></span>';
+      startButton.onclick = () => window.dispatchEvent(new Event('startAction'));
+      buttonContainer.appendChild(startButton);
+
+      popupContent.appendChild(buttonContainer);
+
+      // Device name
+      const deviceName = document.createElement('h3');
+      deviceName.textContent = selectedDevice.device.name;
+      popupContent.appendChild(deviceName);
+
+      // Address
+      const latitude = document.createElement('p');
+      let response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedDevice.position.latitude},${selectedDevice.position.longitude}&key=${this.apiKey}`);
+      const data = await response.json();
+      let address = '';
+      if (data.status === 'OK' && data.results.length > 0) {
+        address = this.getFormattedAddress(data);
+      } else {
+        address = 'Address not found';
+      }
+      latitude.innerHTML = `<strong>Address:</strong> ${address}`;
+      popupContent.appendChild(latitude);
+
+      // Speed limit
+      const speedLimitDiv = document.createElement('div');
+      speedLimitDiv.className = 'speed-limit';
+      speedLimitDiv.style.marginTop = '10px'; // Space above speed limit
+      const speedLimitLabel = document.createElement('p');
+      speedLimitLabel.innerHTML = '<strong>Speed Limit:</strong> ';
+      const speedLimitValue = selectedDevice.device.attributes['speedLimite'] + "km/h" || 'There is no speed limit';
+      speedLimitLabel.innerHTML += `${speedLimitValue}`;
+      speedLimitDiv.appendChild(speedLimitLabel);
+      popupContent.appendChild(speedLimitDiv);
+
+      // Replay button
+      const replayButton = document.createElement('button');
+      replayButton.className = 'p-button p-button-secondary';
+      replayButton.innerHTML = '<span class="p-button-icon pi pi-replay"></span> Replay';
+      replayButton.style.display = 'block'; // Ensure it's on a new line
+      replayButton.style.marginTop = '20px'; // Space above replay button
+      replayButton.onclick = () => {
+        const replayEvent = new CustomEvent('replayAction', {
+          detail: { deviceId: selectedDevice.device.id, from: this.fromDate, to: this.toDate }
+        });
+        window.dispatchEvent(replayEvent);
+      };
+      popupContent.appendChild(replayButton); L.popup()
+        .setLatLng([position.lat, position.lng])
+        .setContent(popupContent)
+        .openOn(this.leafletMap);
+    }
   }
+
+  // startReplay(deviceId: number, from?: string, to?: string): void {
+  //   this.loading = true;
+  //   this.replaying = true;
+  //   this.clearReplay();
+  //   this.removeAllMarkers();
+  //   if (this.infoWindow) {
+  //     this.infoWindow.close();
+  //   }
+  //   this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
+  //     if (positions.length > 0) {
+  //       const parkings = this.parkingDetectionService.findTourParkings(positions);
+  //       const extendedParkings = parkings.map((parking, index) => {
+  //         const extendedParking = {
+  //           ...parking,
+  //           distanceFromLastParking: 0,
+  //           timeFromLastParking: 0
+  //         };
+  //         if (index > 0) {
+  //           const previousParking = parkings[index - 1];
+  //           extendedParking.distanceFromLastParking = this.parkingDetectionService.calculateDistance(
+  //             previousParking.latitude,
+  //             previousParking.longitude,
+  //             parking.latitude,
+  //             parking.longitude
+  //           );
+  //           extendedParking.timeFromLastParking =
+  //             (new Date(parking.deviceTime).getTime() - new Date(previousParking.deviceTime).getTime()) / (1000 * 60); // Convert to minutes
+  //         }
+  //         return extendedParking;
+  //       });
+  //       this.displayTrajectory(positions);
+  //       this.displayParkingMarkers(extendedParkings);
+  //       this.currentReplayIndex = 0;
+  //       this.replayGoogleMarker = this.createreplayGoogleMarker(positions[0]);
+  //       this.isPlaying = true;
+  //       this.maxReplayPosition = positions.length - 1;
+  //       this.trajectoryPath = positions;
+  //       this.animateReplay(this.trajectoryPath);
+  //       this.parkingEvents = extendedParkings;
+  //       this.deviceListComponent.parkingEvents = extendedParkings;
+  //       this.getParkingAddresses();
+  //       if (this.currentMap === 'google') {
+  //         this.googleMap.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
+  //       } else if (this.currentMap === 'yandex') {
+  //         this.yandexMap.setCenter([positions[0].latitude, positions[0].longitude]);
+  //       }
+  //       this.loading = false;
+  //     } else {
+  //       this.loading = false;
+  //       this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
+  //       this.closeReplay();
+  //       return;
+  //     }
+  //   });
+  // }
+
   startReplay(deviceId: number, from?: string, to?: string): void {
     this.loading = true;
     this.replaying = true;
     this.clearReplay();
     this.removeAllMarkers();
-    if (this.infoWindow) {
-      this.infoWindow.close();
-    }
+
+    const closeMapPopup = this.mapClosures[this.currentMap];
+    if (closeMapPopup) closeMapPopup();
+
+    // Make sure to display the replay controller
+    this.cd.detectChanges(); // Ensure the controller visibility updates
+
     this.deviceService.getPositions(deviceId, from, to).subscribe(positions => {
       if (positions.length > 0) {
         const parkings = this.parkingDetectionService.findTourParkings(positions);
@@ -379,7 +776,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.displayTrajectory(positions);
         this.displayParkingMarkers(extendedParkings);
         this.currentReplayIndex = 0;
-        this.replayMarker = this.createReplayMarker(positions[0]);
+        this.createreplayGoogleMarker(positions[0]);  // Create the replay marker
         this.isPlaying = true;
         this.maxReplayPosition = positions.length - 1;
         this.trajectoryPath = positions;
@@ -387,12 +784,14 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.parkingEvents = extendedParkings;
         this.deviceListComponent.parkingEvents = extendedParkings;
         this.getParkingAddresses();
+        this.loading = false;
+
+        // Center the map on the first position
         if (this.currentMap === 'google') {
           this.googleMap.panTo({ lat: positions[0].latitude, lng: positions[0].longitude });
-        } else if (this.currentMap === 'yandex') {
-          this.yandexMap.setCenter([positions[0].latitude, positions[0].longitude]);
+        } else if (this.currentMap === 'leaflet') {
+          this.leafletMap.panTo([positions[0].latitude, positions[0].longitude]);
         }
-        this.loading = false;
       } else {
         this.loading = false;
         this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No positions found for the selected date range.' });
@@ -401,65 +800,136 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
+
+
   clearReplay(): void {
-    if (this.replayMarker) {
-      this.replayMarker.map = null;
-      this.replayMarker = null;
+    if (this.currentMap === 'google') {
+      if (this.replayGoogleMarker) {
+        this.replayGoogleMarker.map = null;
+        this.replayGoogleMarker = null;
+      }
+    } else if (this.currentMap === 'leaflet') {
+      if (this.replayLeafletMarker) {
+        this.leafletMap.removeLayer(this.replayLeafletMarker);
+        this.replayGoogleMarker = null;
+      }
     }
-    if (this.trajectory) {
-      this.trajectory.setMap(null);
-      this.trajectory = null;
-    }
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-    this.currentDatetime = '';
-    this.clearParkingMarkers();
-    this.parkingEvents = [];
     this.clearTrajectoryMarkers();
+    this.clearParkingMarkers();
   }
-  createReplayMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
-    const positionLatLng = { lat: position.latitude, lng: position.longitude };
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.display = 'flex';
-    wrapper.style.flexDirection = 'column';
-    wrapper.style.alignItems = 'center';
-    const nameElement = document.createElement('div');
-    nameElement.style.backgroundColor = 'white';
-    nameElement.style.padding = '2px 5px';
-    nameElement.style.borderRadius = '3px';
-    nameElement.style.boxShadow = '0px 0px 2px rgba(0, 0, 0, 0.3)';
-    nameElement.style.marginBottom = '2px';
-    nameElement.style.fontSize = '12px';
-    nameElement.style.fontWeight = 'bold';
-    const icon = document.createElement('img');
-    icon.src = this.carIcon;
-    icon.style.width = '50px';
-    icon.style.height = '50px';
-    icon.style.transform = `rotate(${position.course}deg)`;
-    wrapper.appendChild(nameElement);
-    wrapper.appendChild(icon);
-    const replayMarker = new google.maps.marker.AdvancedMarkerElement({
-      map: this.googleMap,
-      position: positionLatLng,
-      content: wrapper,
-    });
-    return replayMarker;
+
+
+  // createreplayGoogleMarker(position: Position): google.maps.marker.AdvancedMarkerElement {
+  //   const positionLatLng = { lat: position.latitude, lng: position.longitude };
+  //   const wrapper = document.createElement('div');
+  //   wrapper.style.position = 'relative';
+  //   wrapper.style.display = 'flex';
+  //   wrapper.style.flexDirection = 'column';
+  //   wrapper.style.alignItems = 'center';
+  //   const nameElement = document.createElement('div');
+  //   nameElement.style.backgroundColor = 'white';
+  //   nameElement.style.padding = '2px 5px';
+  //   nameElement.style.borderRadius = '3px';
+  //   nameElement.style.boxShadow = '0px 0px 2px rgba(0, 0, 0, 0.3)';
+  //   nameElement.style.marginBottom = '2px';
+  //   nameElement.style.fontSize = '12px';
+  //   nameElement.style.fontWeight = 'bold';
+  //   const icon = document.createElement('img');
+  //   icon.src = this.carIcon;
+  //   icon.style.width = '50px';
+  //   icon.style.height = '50px';
+  //   icon.style.transform = `rotate(${position.course}deg)`;
+  //   wrapper.appendChild(nameElement);
+  //   wrapper.appendChild(icon);
+  //   const replayGoogleMarker = new google.maps.marker.AdvancedMarkerElement({
+  //     map: this.googleMap,
+  //     position: positionLatLng,
+  //     content: wrapper,
+  //   });
+  //   return replayGoogleMarker;
+  // }
+
+  // updatereplayGoogleMarkerPosition(position: Position): void {
+  //   if (this.replayGoogleMarker) {
+  //     const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
+  //     this.replayGoogleMarker.position = newPosition;
+  //     if (this.replayGoogleMarker.content instanceof HTMLElement) {
+  //       const icon = this.replayGoogleMarker.content.querySelector('img');
+  //       if (icon instanceof HTMLElement) {
+  //         icon.style.transform = `rotate(${position.course}deg)`;
+  //       }
+  //     }
+  //     this.updateSpeedAndTime(position);
+  //     this.throttledPanToMarker(newPosition);
+  //   }
+  // }
+
+  addMarker(device: Device, position: Position): void {
+    if (this.currentMap === 'google') {
+      // Create a Google Maps marker
+      const googleMarker = new google.maps.marker.AdvancedMarkerElement({
+        map: this.googleMap,
+        position: new google.maps.LatLng(position.latitude, position.longitude),
+        title: device.name,
+      });
+      this.markers.set(device.id, googleMarker);
+    } else if (this.currentMap === 'leaflet') {
+      // Create a Leaflet marker
+      const leafletMarker = L.marker([position.latitude, position.longitude], {
+        icon: L.icon({
+          iconUrl: this.carIcon,
+          iconSize: [50, 50]
+        })
+      }).addTo(this.leafletMap);
+      this.leafletMarkers.set(device.id, leafletMarker);
+    }
   }
-  updateReplayMarkerPosition(position: Position): void {
-    if (this.replayMarker) {
+  createreplayGoogleMarker(position: Position): void {
+    if (this.currentMap === 'google') {
+      const positionLatLng = { lat: position.latitude, lng: position.longitude };
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      wrapper.style.display = 'flex';
+      wrapper.style.flexDirection = 'column';
+      wrapper.style.alignItems = 'center';
+      const icon = document.createElement('img');
+      icon.src = this.carIcon;
+      icon.style.width = '20px';
+      icon.style.height = '20px';
+      icon.style.transform = `rotate(${position.course}deg)`;
+      wrapper.appendChild(icon);
+      this.replayGoogleMarker = new google.maps.marker.AdvancedMarkerElement({
+        map: this.googleMap,
+        position: positionLatLng,
+        content: wrapper,
+      });
+    } else if (this.currentMap === 'leaflet') {
+      this.replayLeafletMarker = L.marker([position.latitude, position.longitude], {
+        icon: L.icon({
+          iconUrl: this.carIcon,
+          iconSize: [50, 50]
+        })
+      }).addTo(this.leafletMap);
+    }
+  }
+
+  updatereplayGoogleMarkerPosition(position: Position): void {
+    if (this.currentMap === 'google' && this.replayGoogleMarker) {
       const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
-      this.replayMarker.position = newPosition;
-      if (this.replayMarker.content instanceof HTMLElement) {
-        const icon = this.replayMarker.content.querySelector('img');
+      this.replayGoogleMarker.position = newPosition;
+      if (this.replayGoogleMarker.content instanceof HTMLElement) {
+        const icon = this.replayGoogleMarker.content.querySelector('img');
         if (icon instanceof HTMLElement) {
           icon.style.transform = `rotate(${position.course}deg)`;
         }
       }
       this.updateSpeedAndTime(position);
       this.throttledPanToMarker(newPosition);
+    } else if (this.currentMap === 'leaflet' && this.replayLeafletMarker) {
+      const newPosition = L.latLng(position.latitude, position.longitude);
+      this.replayLeafletMarker.setLatLng(newPosition);
+      this.leafletMap.panTo(newPosition);
+      this.updateSpeedAndTime(position);
     }
   }
   throttledPanToMarker(position: google.maps.LatLng): void {
@@ -473,11 +943,39 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     }
   }
+
   displayTrajectory(positions: Position[]): void {
     if (this.currentMap === 'google') {
       this.displayGoogleTrajectory(positions);
+    } else if (this.currentMap === 'leaflet') {
+      this.displayLeafletTrajectory(positions);
     }
   }
+
+  displayLeafletTrajectory(positions: Position[]): void {
+    const path = positions.map(pos => [pos.latitude, pos.longitude] as [number, number]);
+
+    // If there's an existing polyline, remove it before adding a new one
+    if (this.polyline) {
+      this.leafletMap.removeLayer(this.polyline);
+    }
+
+    // Create and store the new polyline reference
+    this.polyline = L.polyline(path, {
+      color: 'yellow',
+      weight: 2
+    }).addTo(this.leafletMap);
+  }
+
+  removePolyline(): void {
+    if (this.polyline) {
+      this.leafletMap.removeLayer(this.polyline);
+      this.polyline = null; // Clear the reference
+    }
+  }
+
+
+
   displayGoogleTrajectory(positions: Position[]): void {
     const path = positions.map(pos => ({ lat: pos.latitude, lng: pos.longitude }));
     this.trajectory = new google.maps.Polyline({
@@ -510,7 +1008,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           if (clickedIndex !== -1) {
             this.stopReplay();
             this.clearReplay();
-            this.replayMarker = this.createReplayMarker(this.trajectoryPath[clickedIndex]);
+            this.replayGoogleMarker = this.createreplayGoogleMarker(this.trajectoryPath[clickedIndex])!;
             this.currentReplayIndex = clickedIndex;
             this.currentReplayPosition = clickedIndex;
             this.isPlaying = true;
@@ -567,12 +1065,19 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   playReplay(): void {
-    if (this.replayMarker && this.trajectory) {
+    if (this.trajectoryPath && this.trajectoryPath.length > 0) {
       this.isPlaying = true;
+
+      // If the replay was stopped, restart it from the beginning
+      if (!this.replaying) {
+        this.replaying = true;
+        this.currentReplayIndex = 0;  // Restart from the beginning
+        this.createreplayGoogleMarker(this.trajectoryPath[this.currentReplayIndex]);
+      }
+
       this.animateReplay(this.trajectoryPath, this.currentReplayIndex);
     }
   }
-
   pauseReplay(): void {
     this.isPlaying = false;
     if (this.animationFrameId) {
@@ -586,7 +1091,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.pauseReplay();
       this.currentReplayIndex++;
       this.currentReplayPosition = this.currentReplayIndex;
-      this.updateReplayMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
+      this.updatereplayGoogleMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
     }
   }
 
@@ -595,7 +1100,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.pauseReplay();
       this.currentReplayIndex--;
       this.currentReplayPosition = this.currentReplayIndex;
-      this.updateReplayMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
+      this.updatereplayGoogleMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
     }
   }
 
@@ -604,28 +1109,47 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.pauseReplay();
       this.currentReplayIndex = positionIndex;
       this.currentReplayPosition = positionIndex;
-      this.updateReplayMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
+      this.updatereplayGoogleMarkerPosition(this.trajectoryPath[this.currentReplayIndex]);
       this.playReplay();
     }
   }
 
   stopReplay(): void {
     this.isPlaying = false;
+    this.replaying = false;
+
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
+
+    // Clear the replay marker and other related elements
+    if (this.replayGoogleMarker) {
+      if (this.currentMap === 'google') {
+        this.replayGoogleMarker.map = null;
+        this.replayGoogleMarker = null;
+      } else if (this.currentMap === 'leaflet') {
+        this.leafletMap.removeLayer(this.replayLeafletMarker!);
+        this.replayLeafletMarker = null;
+      }
+    }
+
+    // Optionally clear the trajectory and reset the index to allow restarting
+    this.clearReplay();
+    this.currentReplayIndex = 0;
   }
 
   closeReplay(): void {
     this.replaying = false;
     this.following = false;
+    this.clearReplay();
     this.stopReplay();
+    this.removePolyline();
     if (this.trajectory) {
       this.trajectory.setMap(null);
       this.trajectory = null;
     }
-    this.removeReplayMarker();
+    this.removereplayGoogleMarker();
     this.clearParkingMarkers();
     this.clearTrajectoryMarkers();
     this.deviceService.getDevicesWithPositions().subscribe(data => {
@@ -634,10 +1158,10 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  removeReplayMarker(): void {
-    if (this.replayMarker) {
-      this.replayMarker.map = null;
-      this.replayMarker = null;
+  removereplayGoogleMarker(): void {
+    if (this.replayGoogleMarker) {
+      this.replayGoogleMarker.map = null;
+      this.replayGoogleMarker = null;
     }
   }
 
@@ -700,7 +1224,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   onDeviceSelected(device: Device): void {
-    if (this.replayMarker) {
+    if (this.replayGoogleMarker) {
       this.closeReplay();
     }
     this.toggleDeviceList();
@@ -715,6 +1239,14 @@ export class MapComponent implements OnInit, AfterViewInit {
           } else if (this.currentMap === 'yandex') {
             this.yandexMap.setCenter([this.center.lat, this.center.lng]);
           }
+          else if (this.currentMap === 'leaflet') {
+            // Leaflet Map Zoom to Marker
+            const marker = this.leafletMarkers.get(device.id);
+            if (marker) {
+              this.leafletMap.setView(marker.getLatLng(), this.defaultZoom, { animate: true });
+            }
+          }
+
           this.stopAutoFollow = true;
         });
       }
@@ -727,28 +1259,44 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   smoothZoom(targetZoom: number, callback: () => void): void {
-    const currentZoom = this.currentMap === 'google' ? this.googleMap.getZoom() || this.zoom : this.yandexMap.getZoom() || this.zoom;
-    if (currentZoom === targetZoom) {
-      callback();
-      return;
+    if (this.currentMap === 'google' && this.googleMap) {
+      let currentZoom = this.googleMap.getZoom() || this.zoom;
+      const increment = targetZoom > currentZoom ? 1 : -2;
+      this.isZooming = true;
+      const interval = setInterval(() => {
+        currentZoom += increment;
+        this.googleMap.setZoom(currentZoom);
+
+        if ((increment > 0 && currentZoom >= targetZoom) || (increment < 0 && currentZoom <= targetZoom)) {
+          clearInterval(interval);
+          this.isZooming = false;
+          callback();
+        }
+      }, 100);
+    } else if (this.currentMap === 'leaflet' && this.leafletMap) {
+      this.smoothZoomLeaflet(targetZoom, callback);
+    } else {
+      console.warn('smoothZoom: Map is not initialized or unsupported map type.');
+      callback(); // Exit gracefully
     }
-    const increment = targetZoom > currentZoom ? 1 : -2;
+  }
+
+  smoothZoomLeaflet(targetZoom: number, callback: () => void): void {
+    let currentZoom = this.leafletMap.getZoom();
+    const increment = targetZoom > currentZoom ? 1 : -1;
     this.isZooming = true;
+
     const interval = setInterval(() => {
-      const newZoom = (this.currentMap === 'google' ? this.googleMap.getZoom() || 0 : this.yandexMap.getZoom() || 0) + increment;
-      if (this.currentMap === 'google') {
-        this.googleMap.setZoom(newZoom);
-      } else if (this.currentMap === 'yandex') {
-        this.yandexMap.setZoom(newZoom);
-      }
-      if ((increment > 0 && newZoom >= targetZoom) || (increment < 0 && newZoom <= targetZoom)) {
+      currentZoom += increment;
+      this.leafletMap.setZoom(currentZoom);
+
+      if ((increment > 0 && currentZoom >= targetZoom) || (increment < 0 && currentZoom <= targetZoom)) {
         clearInterval(interval);
         this.isZooming = false;
         callback();
       }
     }, 100);
   }
-
   toggleDeviceList(): void {
     this.deviceListOpen = !this.deviceListOpen;
   }
@@ -830,6 +1378,42 @@ export class MapComponent implements OnInit, AfterViewInit {
     step();
   }
 
+  updateReplayMarkerPosition(position: Position): void {
+    if (this.currentMap === 'google' && this.replayGoogleMarker) {
+      const newPosition = new google.maps.LatLng(position.latitude, position.longitude);
+      this.replayGoogleMarker.position = newPosition;
+      if (this.replayGoogleMarker.content instanceof HTMLElement) {
+        const icon = this.replayGoogleMarker.content.querySelector('img');
+        if (icon instanceof HTMLElement) {
+          icon.style.transform = `rotate(${position.course}deg)`; // Rotate the icon based on course
+        }
+      }
+      this.updateSpeedAndTime(position);
+      this.throttledPanToMarker(newPosition);
+    } else if (this.currentMap === 'leaflet' && this.replayLeafletMarker) {
+      const newPosition = L.latLng(position.latitude, position.longitude);
+
+      // Update the position of the marker
+      this.replayLeafletMarker.setLatLng(newPosition);
+
+      // Create a new DivIcon with rotation
+      const newIcon = L.divIcon({
+        className: 'custom-div-icon', // Add a custom class for further styling
+        html: `<img src="${this.carIcon}" style="transform: rotate(${position.course}deg); width: 30px; height: 30px;">`,
+        iconSize: [50, 50], // Size of the icon
+        iconAnchor: [25, 25] // Anchor in the center
+      });
+
+      // Set the new icon with rotation
+      this.replayLeafletMarker.setIcon(newIcon);
+
+      // Pan the map to the new position
+      this.leafletMap.panTo(newPosition);
+
+      this.updateSpeedAndTime(position);
+    }
+  }
+
   updateSpeedAndTime(position: Position): void {
     this.speed = position.speed ? position.speed * 1.852 : 0; // Convert knots to km/h
     this.currentDatetime = this.formatDatetime(position.deviceTime);
@@ -872,4 +1456,32 @@ export class MapComponent implements OnInit, AfterViewInit {
     const mins = Math.floor(minutes % 60);
     return hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}` : `${mins} minute${mins > 1 ? 's' : ''}`;
   }
+
+  async switchMap(mapType: 'google' | 'leaflet'): Promise<void> {
+    this.removeAllMarkers();
+    this.currentMap = mapType;
+    if (mapType === 'google') {
+      this.cd.detectChanges();
+      await this.loadGoogleMap();
+      this.initializeMarkers();  // Re-initialize markers after loading the map
+    } else if (mapType === 'leaflet') {
+      this.cd.detectChanges(); // Ensure view updates
+      await new Promise(resolve => setTimeout(resolve, 100)); // Short delay
+      await this.waitForElement(this.leafletMapElement);
+      await this.loadLeafletMap();
+      this.initializeMarkers();  // Re-initialize markers after loading the map
+    }
+  }
+
+  private async waitForElement(ref: ElementRef | undefined): Promise<void> {
+    while (!ref || !ref.nativeElement) {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+  }
+
+  private mapClosures: { [key: string]: () => void } = {
+    'leaflet': () => this.leafletMap.closePopup(),
+    'google': () => this.infoWindow.close()
+  };
+
 }

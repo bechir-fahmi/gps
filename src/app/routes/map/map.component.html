@@ -1,12 +1,29 @@
 <div class="map-container">
   <p-toast></p-toast>
   <button class="toggle-button" (click)="toggleDeviceList()">☰</button>
+
   <div class="device-list-container" [class.open]="deviceListOpen">
     <button class="close-button" (click)="toggleDeviceList()">✖</button>
     <app-device-list #deviceList [devices]="devices" (deviceSelected)="onDeviceSelected($event)"></app-device-list>
   </div>
-  <google-map #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%"></google-map>
+
+  <!-- Map switcher -->
+  <div class="map-switcher">
+    <label for="mapType">Select Map:</label>
+    <select id="mapType" [(ngModel)]="selectedMap" (change)="switchMap(selectedMap)">
+      <option *ngFor="let option of mapOptions" [value]="option.value">{{ option.label }}</option>
+    </select>
+  </div>
+
+  <!-- Google Map -->
+  <google-map *ngIf="currentMap === 'google'" #mapElement [mapId]="mapId" [center]="center" [zoom]="zoom" height="100%" width="100%"></google-map>
+
+  <!-- Leaflet Map -->
+  <div *ngIf="currentMap === 'leaflet'" #leafletMap id="leafletMap" style="height: 100%; width: 100%;"></div>
+  <!-- <app-leaflet-map *ngIf="currentMap === 'leaflet'" [center]="center" [zoom]="zoom" style="height: 100%; width: 100%;"></app-leaflet-map> -->
+
   <p-confirmDialog></p-confirmDialog>
+
   <app-replay-controls
     *ngIf="replaying"
     (stop)="stopReplay()"
@@ -19,6 +36,7 @@
     [maxPosition]="maxReplayPosition"
     [currentPosition]="currentReplayPosition">
   </app-replay-controls>
+
   <div id="speedometer-container" *ngIf="replaying || following">
     <ngx-gauge
       [value]="speed"
@@ -26,13 +44,14 @@
       [max]="200"
       [type]="'arch'"
       [cap]="'butt'"
-      [size]="100"
-      [thick]="12"
+      [size]="gaugeSize"
+      [thick]="gaugeThickness"
       [label]="'Speed (km/h)'"
       [foregroundColor]="'#FF0000'"
       [backgroundColor]="'#E0E0E0'">
     </ngx-gauge>
   </div>
+
   <div *ngIf="loading" class="loading-indicator">
     <p-progressSpinner ariaLabel="loading"></p-progressSpinner>
     <p>Loading...</p>
