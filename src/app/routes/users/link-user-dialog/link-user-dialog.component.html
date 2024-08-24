@@ -1,40 +1,22 @@
 <p-dialog header="Link Devices to User" [(visible)]="display" [modal]="true" [closable]="true"
   [style]="{ width: '80vw' , height: '80vh' }" (onHide)="closeDialog()">
   <div class="p-fluid">
-    <div class="p-field">
-      <label for="devices">Select Devices</label>
-      <p-multiSelect id="devices" [options]="devices" [(ngModel)]="selectedDevices" optionLabel="name" filter="true"
-        placeholder="Select devices">
-        <ng-template let-device pTemplate="item">
+    <div class="p-field"><label for="devices">SELECT_DEVICES</label><p-multiSelect id="devices" [options]="devices"
+        [(ngModel)]="selectedDevices" optionLabel="name" filter="true" placeholder="Select devices"><ng-template
+          let-device pTemplate="item">
           {{ device.name }} ({{ device.uniqueId }})
-        </ng-template>
-        <ng-template let-device pTemplate="selectedItem">
+        </ng-template><ng-template let-device pTemplate="selectedItem">
           {{ device.name }} ({{ device.uniqueId }})
-        </ng-template>
-      </p-multiSelect>
-    </div>
-
-    <!-- Loop through selected devices and display a text area for each -->
-    <div class="p-field" *ngFor="let device of selectedDevices">
-      <label for="{{ 'deviceMessage' + device.id }}">{{ device.name }} Message</label>
-      <textarea
-        id="{{ 'deviceMessage' + device.id }}"
-        rows="5"
-        cols="30"
-        pInputTextarea
-        [(ngModel)]="device.attributes['message']"
-        placeholder="Enter message for {{ device.name }}"
-      ></textarea>
-      <small *ngIf="device.attributes['message']">
+        </ng-template></p-multiSelect></div><!-- Loop through
+    selected devices and display a text area for each -->
+    <div class="p-field" *ngFor="let device of selectedDevices"><label for="{{ 'deviceMessage' + device.id }}">{{
+        device.name }} Message</label><textarea id="{{ 'deviceMessage' + device.id }}" rows="5" cols="30" pInputTextarea
+        [(ngModel)]="device.attributes['message']" placeholder="Enter message for {{ device.name }}">
+  </textarea><small *ngIf="device.attributes['message']">
         Current message: {{ device.attributes['message'] }}
-      </small>
-    </div>
-  </div>
-
-  <p-footer>
-    <p-button label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times"
-      (click)="closeDialog()"></p-button>
-    <p-button label="Link" icon="pi pi-check" (click)="linkDevices()"
-      [disabled]="!selectedDevices || selectedDevices.length === 0"></p-button>
-  </p-footer>
+      </small></div>
+  </div><p-footer><p-button label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times"
+      (click)="closeDialog()">
+    </p-button><p-button label="Link" icon="pi pi-check" (click)="linkDevices()"
+      [disabled]="!selectedDevices || selectedDevices.length === 0"></p-button></p-footer>
 </p-dialog>

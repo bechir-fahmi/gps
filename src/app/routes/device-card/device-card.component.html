@@ -1,21 +1,14 @@
-<!-- <div class="device-card">
-  <h3>{{ device?.device.name }}</h3>
-  <p>Status: {{ device?.device.status }}</p>
-  <p>Location: {{ device?.device.location }}</p>
-  <div class="device-card-buttons">
-    <button (click)="onButton1Click()">Button 1</button>
-    <button (click)="onButton2Click()">Button 2</button>
-    <button (click)="onButton3Click()">Button 3</button>
-  </div>
-</div> -->
-<div class="status-card">
-  <div class="header">
-    <span>{{ device.name }}</span>
-    <button (click)="onClose()">X</button>
-  </div>
+<div class="status-card"><div class="header"><span>{{
+      device.name }}</span><button (click)="onClose()">X</button></div>
   <div class="content">
-    <p><strong>Speed:</strong> {{ position.speed }} km/h</p>
-    <p><strong>Latitude:</strong> {{ position.latitude }}</p>
-    <p><strong>Longitude:</strong> {{ position.longitude }}</p>
+    <p>
+      <strong>SPEED:</strong> {{ position.speed }} km/h
+    </p>
+    <p>
+      <strong>LATITUDE:</strong> {{ position.latitude }}
+    </p>
+    <p>
+      <strong>LONGITUDE:</strong> {{ position.longitude }}
+    </p>
   </div>
 </div>

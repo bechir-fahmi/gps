@@ -23,6 +23,8 @@
     "@angular/platform-browser-dynamic": "17.3.10",
     "@angular/router": "17.3.10",
     "@asymmetrik/ngx-leaflet": "^17.0.0",
+    "@ngx-translate/core": "^15.0.0",
+    "@ngx-translate/http-loader": "^8.0.0",
     "angular-gauge": "^5.0.0",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.11",

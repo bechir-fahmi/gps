@@ -1,79 +1,32 @@
 <div class="grid">
   <div class="col-12">
-    <div class="card">
-      <p-table
-        [value]="notifications"
-        [loading]="loading"
-        [rows]="10"
-        [paginator]="true"
-        [rowsPerPageOptions]="[10, 20, 50]"
-        [totalRecords]="notifications.length"
-        responsiveLayout="scroll"
-        scrollHeight="400px"
-      >
-        <ng-template pTemplate="caption">
-          <div>
-            <p-button
-              pRipple
-              type="button"
-              icon="pi pi-plus"
-              label="Add Notification"
-              styleClass="p-button-outlined"
-              (click)="showAddDialog()"
-            ></p-button>
-          </div>
-        </ng-template>
-
-        <ng-template pTemplate="header">
+    <div class="card"><p-table [value]="notifications" [loading]="loading" [rows]="10" [paginator]="true"
+        [rowsPerPageOptions]="[10, 20, 50]" [totalRecords]="notifications.length" responsiveLayout="scroll"
+        scrollHeight="400px"><ng-template pTemplate="caption">
+          <div><p-button pRipple type="button" icon="pi pi-plus" label="Add Notification" styleClass="p-button-outlined"
+              (click)="showAddDialog()"></p-button></div>
+        </ng-template><ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="type">Type</th>
-            <!-- <th pSortableColumn="always">Always</th>
-            <th pSortableColumn="notificators">Notificators</th> -->
-            <th>Actions</th>
+            <th pSortableColumn="type">TYPE</th>
+            <!-- <th pSortableColumn="always">ALWAYS</th><th pSortableColumn="notificators">NOTIFICATORS</th>-->
+            <th>ACTIONS</th>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-notification>
+        </ng-template><ng-template pTemplate="body" let-notification>
           <tr>
             <td>{{ notification.attributes.alarm }}</td>
-            <!-- <td>{{ notification.always }}</td>
-            <td>{{ notification.notificators }}</td> -->
-            <td>
-              <p-button
-                pTooltip="Edit this Notification"
-                pRipple
-                type="button"
-                icon="pi pi-pencil"
-                styleClass="p-button-outlined"
-                (click)="showEditDialog(notification)"
-              ></p-button>
-              <p-button
-                pTooltip="Delete this Notification"
-                pRipple
-                type="button"
-                icon="pi pi-trash"
-                styleClass="p-button-outlined"
-                (click)="deleteNotification(notification)"
-              ></p-button>
-            </td>
+            <!-- <td>{{ notification.always }}</td><td>{{ notification.notificators }}</td>-->
+            <td><p-button pTooltip="Edit this Notification" pRipple type="button" icon="pi pi-pencil"
+                styleClass="p-button-outlined" (click)="showEditDialog(notification)"></p-button><p-button
+                pTooltip="Delete this Notification" pRipple type="button" icon="pi pi-trash"
+                styleClass="p-button-outlined" (click)="deleteNotification(notification)"></p-button></td>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
+        </ng-template><ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="4">No notifications found.</td>
+            <td colspan="4">NO_NOTIFICATIONS_FOUND.</td>
           </tr>
-        </ng-template>
-      </p-table>
-    </div>
+        </ng-template></p-table></div>
   </div>
-</div>
-<p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>
-<p-toast></p-toast>
-<app-add-edit-notification
-  [displayDialog]="displayDialog"
-  [notification]="selectedNotification"
-  (notificationSaved)="saveNotification($event)"
-  (dialogClosed)="displayDialog = false"
-></app-add-edit-notification>
-
+</div><p-confirmDialog header="Confirmation"
+  icon="pi pi-exclamation-triangle"></p-confirmDialog><p-toast></p-toast><app-add-edit-notification
+  [displayDialog]="displayDialog" [notification]="selectedNotification" (notificationSaved)="saveNotification($event)"
+  (dialogClosed)="displayDialog = false"></app-add-edit-notification>

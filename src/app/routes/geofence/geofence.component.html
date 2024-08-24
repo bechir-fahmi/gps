@@ -1,49 +1,34 @@
 <div class="grid">
   <div class="col-12">
-    <div class="card">
-      <p-table [value]="geofences" [loading]="loading" [rows]="10" [paginator]="true"
+    <div class="card"><p-table [value]="geofences" [loading]="loading" [rows]="10" [paginator]="true"
         [rowsPerPageOptions]="[10, 20, 50]" [totalRecords]="geofences.length" responsiveLayout="scroll"
-        scrollHeight="400px">
-        <ng-template pTemplate="caption">
-          <div>
-            <p-button pRipple type="button" icon="pi pi-plus" label="Add" styleClass="p-button-outlined"
-              (click)="showMapDialog(null, 'edit')"></p-button>
-          </div>
-        </ng-template>
-
-        <ng-template pTemplate="header">
+        scrollHeight="400px"><ng-template pTemplate="caption">
+          <div><p-button pRipple type="button" icon="pi pi-plus" label="Add" styleClass="p-button-outlined"
+              (click)="showMapDialog(null, 'edit')"></p-button></div>
+        </ng-template><ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="name">Name</th>
-            <th>Actions</th>
+            <th pSortableColumn="name">NAME</th>
+            <th>ACTIONS</th>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-geofence>
+        </ng-template><ng-template pTemplate="body" let-geofence>
           <tr>
             <td>{{ geofence.name }}</td>
-            <td>
-              <p-button pRipple pTooltip="Edit this Geofence" type="button" icon="pi pi-pencil" styleClass="p-button-outlined"
-                (click)="showMapDialog(geofence, 'edit')"></p-button>
-              <p-button pTooltip="View this Geofence" pRipple type="button" icon="pi pi-map" styleClass="p-button-outlined"
-                (click)="showMapDialog(geofence, 'view')"></p-button>
-              <p-button pTooltip="Delete this Geofence" pRipple type="button" icon="pi pi-trash" styleClass="p-button-outlined"
-                (click)="deleteGeofence(geofence.id)"></p-button>
-              <!-- <p-speedDial [model]="items" direction="left" [radius]="80" type="semi-circle" /> -->
+            <td><p-button pRipple pTooltip="Edit this Geofence" type="button" icon="pi pi-pencil"
+                styleClass="p-button-outlined" (click)="showMapDialog(geofence, 'edit')"></p-button><p-button
+                pTooltip="View this Geofence" pRipple type="button" icon="pi pi-map" styleClass="p-button-outlined"
+                (click)="showMapDialog(geofence, 'view')"></p-button><p-button pTooltip="Delete this Geofence" pRipple
+                type="button" icon="pi pi-trash" styleClass="p-button-outlined"
+                (click)="deleteGeofence(geofence.id)"></p-button><!-- <p-speedDial [model]="items" direction="left" [radius]="80" type="semi-circle" />-->
             </td>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
+        </ng-template><ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="4">No geofences found.</td>
+            <td colspan="4">NO_GEOFENCES_FOUND.
+            </td>
           </tr>
-        </ng-template>
-      </p-table>
-    </div>
+        </ng-template></p-table></div>
   </div>
-</div>
-
-<p-toast></p-toast>
-<p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>
-<app-geofence-map-dialog [displayDialog]="displayMapDialog" [geofence]="selectedGeofence" [mode]="mapDialogMode"
-  (geofenceSaved)="onGeofenceSaved($event)" (dialogClosed)="onDialogClosed()"></app-geofence-map-dialog>
+</div><p-toast></p-toast><p-confirmDialog header="Confirmation"
+  icon="pi pi-exclamation-triangle"></p-confirmDialog><app-geofence-map-dialog [displayDialog]="displayMapDialog"
+  [geofence]="selectedGeofence" [mode]="mapDialogMode" (geofenceSaved)="onGeofenceSaved($event)"
+  (dialogClosed)="onDialogClosed()"></app-geofence-map-dialog>

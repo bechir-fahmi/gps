@@ -1,7 +1,4 @@
-<div class="grid">
-  <div class="col-12">
-    <div class="card">
-      <p-table
+<div class="grid"><div class="col-12"><div class="card"><p-table
         #dt1
         [value]="users"
         [loading]="loading"
@@ -12,40 +9,14 @@
         responsiveLayout="scroll"
         scrollHeight="400px"
         [globalFilterFields]="['name', 'email', 'phone']"
-      >
-        <ng-template pTemplate="caption">
-          <div class="table-caption">
-            <p-button
+      ><ng-template pTemplate="caption"><div class="table-caption"><p-button
               pRipple
               type="button"
               icon="pi pi-plus"
               label="Add"
               styleClass="p-button-outlined"
               (click)="showDialogToAdd()"
-            ></p-button>
-            <span class="p-input-icon-left ml-auto">
-              <i class="pi pi-search"></i>
-              <input pInputText type="text" [(ngModel)]="searchValue" (input)="onInput($event)" placeholder="Search keyword" />
-            </span>
-          </div>
-        </ng-template>
-
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="name">Name</th>
-            <th pSortableColumn="email">Email</th>
-            <th pSortableColumn="phone">Phone</th>
-            <th>Actions</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-user>
-          <tr>
-            <td>{{ user.name }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.phone }}</td>
-            <td>
-              <p-button
+            ></p-button><span class="p-input-icon-left ml-auto"><i class="pi pi-search"></i><input pInputText type="text" [(ngModel)]="searchValue" (input)="onInput($event)" placeholder="Search keyword" /></span></div></ng-template><ng-template pTemplate="header"><tr><th pSortableColumn="name">NAME</th><th pSortableColumn="email">EMAIL</th><th pSortableColumn="phone">PHONE</th><th>ACTIONS</th></tr></ng-template><ng-template pTemplate="body" let-user><tr><td>{{ user.name }}</td><td>{{ user.email }}</td><td>{{ user.phone }}</td><td><p-button
                 [disabled]="isTechnical"
                 pTooltip="Edit this User"
                 pRipple
@@ -53,48 +24,27 @@
                 icon="pi pi-pencil"
                 styleClass="p-button-outlined"
                 (click)="showDialogToEdit(user)"
-              ></p-button>
-              <p-button
+              ></p-button><p-button
                 pTooltip="Delete this User"
                 pRipple
                 type="button"
                 icon="pi pi-trash"
                 styleClass="p-button-outlined"
                 (click)="deleteUser(user)"
-              ></p-button>
-              <p-button
+              ></p-button><p-button
                 pTooltip="Link Devices for this user"
                 pRipple
                 type="button"
                 icon="pi pi-link"
                 styleClass="p-button-outlined"
                 (click)="linkUser(user)"
-              ></p-button>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="4">No users found.</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-  </div>
-</div>
-
-<p-toast></p-toast>
-<app-add-edit-user
+              ></p-button></td></tr></ng-template><ng-template pTemplate="emptymessage"><tr><td colspan="4">NO_USERS_FOUND.</td></tr></ng-template></p-table></div></div></div><p-toast></p-toast><app-add-edit-user
   [display]="displayDialog"
   [user]="selectedUser"
   (onSave)="saveUser($event)"
   (onClose)="displayDialog = false"
-></app-add-edit-user>
-<app-link-user-dialog
+></app-add-edit-user><app-link-user-dialog
   [display]="displayLinkDialog"
   [userId]="selectedUser?.id"
   (onClose)="displayLinkDialog = false"
-  (linkDevicesEvent)="onLinkDevicesEvent($event)">
-</app-link-user-dialog>
-<p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>
+  (linkDevicesEvent)="onLinkDevicesEvent($event)"></app-link-user-dialog><p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>

@@ -1,89 +1,31 @@
-<p-dialog
-  header="User Details"
-  [(visible)]="display"
-  [modal]="true"
-  [closable]="true"
-  [style]="{ width: '60vw' }"
-  (onHide)="close()"
->
-  <p-accordion>
-    <p-accordionTab header="Required" [selected]="true">
+<p-dialog header="User Details" [(visible)]="display" [modal]="true" [closable]="true" [style]="{ width: '60vw' }"
+  (onHide)="close()"><p-accordion><p-accordionTab header="Required" [selected]="true">
       <div class="p-fluid">
-        <div class="p-field">
-          <label for="name">Name</label>
-          <input id="name" type="text" pInputText [(ngModel)]="user.name" *ngIf="user" required />
-        </div>
-        <div class="p-field" [hidden]="isAdmin||isTechnical">
-          <label for="email">Email</label>
-          <input id="email" type="text" [disabled]="isTechnical" pInputText [(ngModel)]="user.attributes['email']" *ngIf="user" required />
-        </div>
-        <div class="p-field">
-          <label for="password">Password</label>
-          <input id="password" type="password" pInputText [(ngModel)]="user.password" *ngIf="user" required />
-        </div>
+        <div class="p-field"><label for="name">NAME</label><input id="name" type="text" pInputText
+            [(ngModel)]="user.name" *ngIf="user" required /></div>
+        <div class="p-field" [hidden]="isAdmin||isTechnical"><label for="email">EMAIL</label><input id="email"
+            type="text" [disabled]="isTechnical" pInputText [(ngModel)]="user.attributes['email']" *ngIf="user"
+            required /></div>
+        <div class="p-field"><label for="password">PASSWORD</label><input id="password" type="password" pInputText
+            [(ngModel)]="user.password" *ngIf="user" required /></div>
       </div>
-    </p-accordionTab>
-
-    <p-accordionTab header="Preferences">
+    </p-accordionTab><p-accordionTab header="Preferences">
       <div class="p-fluid">
-        <div class="p-field">
-          <label for="phone1">Phone 1</label>
-          <input id="phone1" type="text" pInputText [(ngModel)]="user.phone" *ngIf="user" required />
-        </div>
-        <div class="p-field">
-          <label for="phone2">Phone 2</label>
-          <input id="phone2" type="text" pInputText />
-        </div>
-        <!-- <div class="p-field">
-          <label for="speedUnit">Speed Unit</label>
-          <p-dropdown id="speedUnit"  [options]="[{ label: 'km/h', value: 'km/h' }, { label: 'nd', value: 'nd' }, { label: 'mph', value: 'mph' }]" placeholder="Select a Speed Unit" />
-        </div> -->
+        <div class="p-field"><label for="phone1">PHONE_1</label><input id="phone1" type="text" pInputText
+            [(ngModel)]="user.phone" *ngIf="user" required /></div>
+        <div class="p-field"><label for="phone2">PHONE_2</label><input id="phone2" type="text" pInputText /></div>
+        <!-- <div class="p-field"><label for="speedUnit">SPEEDUNIT</label><p-dropdown id="speedUnit"  [options]="[{ label: 'km/h', value: 'km/h' }, { label: 'nd', value: 'nd' }, { label: 'mph', value: 'mph' }]" placeholder="Select a Speed Unit" /></div>-->
       </div>
-    </p-accordionTab>
-
-    <!-- <p-accordionTab header="Localization">
+    </p-accordionTab><!-- <p-accordionTab header="Localization"><div class="p-fluid"><div class="p-field"><label for="latitude">LATITUDE</label><input id="latitude" type="text" pInputText [(ngModel)]="user.latitude" *ngIf="user"/></div><div class="p-field"><label for="longitude">LONGITUDE</label><input id="longitude" type="text" pInputText [(ngModel)]="user.longitude" *ngIf="user" /></div><p-button label="Get Current Location" icon="pi pi-location-arrow" (click)="getCurrentLocation()"></p-button></div></p-accordionTab>--><p-accordionTab
+      header="Permissions">
       <div class="p-fluid">
-        <div class="p-field">
-          <label for="latitude">Latitude</label>
-          <input id="latitude" type="text" pInputText [(ngModel)]="user.latitude" *ngIf="user"/>
-        </div>
-        <div class="p-field">
-          <label for="longitude">Longitude</label>
-          <input id="longitude" type="text" pInputText [(ngModel)]="user.longitude" *ngIf="user" />
-        </div>
-        <p-button label="Get Current Location" icon="pi pi-location-arrow" (click)="getCurrentLocation()"></p-button>
+        <!-- <div class="p-field"><label for="deviceLimit">DEVICELIMIT</label><input id="deviceLimit" type="number" pInputText [(ngModel)]="user.deviceLimit" *ngIf="user" value="-1" /></div><div class="p-field"><label for="userLimit">USERLIMIT</label><input id="userLimit" type="number" pInputText [(ngModel)]="user.userLimit" *ngIf="user" value="0" /></div>-->
+        <div class="p-field-checkbox"><p-checkbox id="admin" [(ngModel)]="user.administrator" *ngIf="user"
+            binary="true"></p-checkbox><label for="admin">ADMINISTRATOR</label></div>
+        <div class="p-field-checkbox"><p-checkbox id="Technichal" [(ngModel)]="user.attributes['isTechnical']"
+            *ngIf="user" binary="true"></p-checkbox><label for="Technichal">TECHNICHAL</label></div>
+        <!-- <div class="p-field-checkbox">ADD NORMAL USER HERE DONT FORGET!!!!!!!<p-checkbox id="Technichal" [(ngModel)]="" *ngIf="user" binary="true"></p-checkbox><label for="Technichal">TECHNICHAL</label></div>-->
       </div>
-    </p-accordionTab> -->
-
-    <p-accordionTab header="Permissions">
-      <div class="p-fluid">
-
-        <!-- <div class="p-field">
-          <label for="deviceLimit">Device Limit</label>
-          <input id="deviceLimit" type="number" pInputText [(ngModel)]="user.deviceLimit" *ngIf="user" value="-1" />
-        </div>
-        <div class="p-field">
-          <label for="userLimit">User Limit</label>
-          <input id="userLimit" type="number" pInputText [(ngModel)]="user.userLimit" *ngIf="user" value="0" />
-        </div> -->
-        <div class="p-field-checkbox">
-          <p-checkbox id="admin" [(ngModel)]="user.administrator" *ngIf="user" binary="true"></p-checkbox>
-          <label for="admin">Administrator</label>
-        </div>
-        <div class="p-field-checkbox">
-          <p-checkbox id="Technichal" [(ngModel)]="user.attributes['isTechnical']" *ngIf="user" binary="true"></p-checkbox>
-          <label for="Technichal">Technichal</label>
-        </div>
-        <!-- <div class="p-field-checkbox"> add normal user here dont forget !!!!!!!
-          <p-checkbox id="Technichal" [(ngModel)]="" *ngIf="user" binary="true"></p-checkbox>
-          <label for="Technichal">Technichal</label>
-        </div> -->
-      </div>
-    </p-accordionTab>
-  </p-accordion>
-
-  <p-footer>
-    <p-button label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times" (click)="close()"></p-button>
-    <p-button label="Save" icon="pi pi-check" (click)="save()" [disabled]="!user"></p-button>
-  </p-footer>
-</p-dialog>
+    </p-accordionTab></p-accordion><p-footer><p-button label="Cancel" [outlined]="true" severity="secondary"
+      icon="pi pi-times" (click)="close()"></p-button><p-button label="Save" icon="pi pi-check" (click)="save()"
+      [disabled]="!user"></p-button></p-footer></p-dialog>

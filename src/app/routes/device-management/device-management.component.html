@@ -1,93 +1,45 @@
 <div class="grid">
   <div class="col-12">
-    <div class="card">
-      <p-table
-      #dt1
-      [dataKey]="'id'"
-        [value]="devices"
-        [loading]="loading"
-        [rows]="10"
-        [paginator]="true"
-        [rowsPerPageOptions]="[10, 20, 50]"
-        [totalRecords]="devices.length"
-        responsiveLayout="scroll"
+    <div class="card"><p-table #dt1 [dataKey]="'id'" [value]="devices" [loading]="loading" [rows]="10"
+        [paginator]="true" [rowsPerPageOptions]="[10, 20, 50]" [totalRecords]="devices.length" responsiveLayout="scroll"
         [globalFilterFields]="['name', 'uniqueId', 'message', 'linkerName', 'expirationTime']"
-        scrollHeight="400px"
-      >
-        <ng-template pTemplate="caption">
-          <div class="table-caption">
-            <p-button [hidden]="!isTechnical && !isAdmin"
-              pRipple
-              type="button"
-              icon="pi pi-plus"
-              label="Add Device"
-              styleClass="p-button-outlined"
-              (click)="showAddDialog()"
-            ></p-button>
-            <span class="p-input-icon-left ml-auto">
-              <i class="pi pi-search"></i>
-              <input pInputText type="text" [(ngModel)]="searchValue" (input)="onInput($event)" placeholder="Search keyword" />
-            </span>
-          </div>
-        </ng-template>
-
-        <ng-template pTemplate="header">
+        scrollHeight="400px"><ng-template pTemplate="caption">
+          <div class="table-caption"><p-button [hidden]="!isTechnical && !isAdmin" pRipple type="button"
+              icon="pi pi-plus" label="Add Device" styleClass="p-button-outlined"
+              (click)="showAddDialog()"></p-button><span class="p-input-icon-left ml-auto"><i
+                class="pi pi-search"></i><input pInputText type="text" [(ngModel)]="searchValue"
+                (input)="onInput($event)" placeholder="Search keyword" /></span></div>
+        </ng-template><ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="name">Name</th>
-            <th pSortableColumn="uniqueId">Unique ID</th>
-            <th pSortableColumn="message" [hidden]="!isTechnical && !isAdmin">Message</th>
-            <th pSortableColumn="linkerName" [hidden]="!isTechnical && !isAdmin">Linked By</th>
-            <th pSortableColumn="expirationTime" >Expiration Time</th>
-            <th [hidden]="!isTechnical && !isAdmin">Actions</th>
+            <th pSortableColumn="name">NAME</th>
+            <th pSortableColumn="uniqueId">UNIQUE_ID</th>
+            <th pSortableColumn="message" [hidden]="!isTechnical && !isAdmin">MESSAGE</th>
+            <th pSortableColumn="linkerName" [hidden]="!isTechnical && !isAdmin">LINKED_BY</th>
+            <th pSortableColumn="expirationTime">EXPIRATION_TIME</th>
+            <th [hidden]="!isTechnical && !isAdmin">ACTIONS</th>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-device>
+        </ng-template><ng-template pTemplate="body" let-device>
           <tr>
-            <td>{{ device.name }}</td>
+            <td>{{ device.name }}
+            </td>
             <td>{{ device.uniqueId }}</td>
             <td [hidden]="!isTechnical && !isAdmin">{{ device.attributes.message || 'N/A'}}</td>
             <td [hidden]="!isTechnical && !isAdmin">
-              {{ users[device.attributes.LinkerId]?.name || 'N/A' }}
-            </td>
-            <td >
-              {{ device.attributes.expirationTime|date : "dd/MM/yyyy" || 'N/A' }}
-            </td>
+              {{ users[device.attributes.LinkerId]?.name || ' N/A' }} </td>
             <td>
-              <p-button  pTooltip="Edit this Device" [hidden]="!isTechnical && !isAdmin"
-                pRipple
-                type="button"
-                icon="pi pi-pencil"
-                styleClass="p-button-outlined"
-                (click)="showEditDialog(device)"
-              ></p-button>
-              <p-button  pTooltip="Delete this Device" [hidden]="!isTechnical && !isAdmin"
-                pRipple
-                type="button"
-                icon="pi pi-trash"
-                styleClass="p-button-outlined"
-                (click)="confirmDelete(device)"
-              ></p-button>
-            </td>
+              {{ device.attributes.expirationTime|date : "dd/MM/yyyy" || ' N/A' }} </td>
+            <td><p-button pTooltip="Edit this Device" [hidden]="!isTechnical && !isAdmin" pRipple type="button"
+                icon="pi pi-pencil" styleClass="p-button-outlined" (click)="showEditDialog(device)"></p-button><p-button
+                pTooltip="Delete this Device" [hidden]="!isTechnical && !isAdmin" pRipple type="button"
+                icon="pi pi-trash" styleClass="p-button-outlined" (click)="confirmDelete(device)"></p-button></td>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
+        </ng-template><ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="5">No devices found.</td>
+            <td colspan="5">NO_DEVICES_FOUND.</td>
           </tr>
-        </ng-template>
-      </p-table>
+        </ng-template></p-table>
     </div>
   </div>
-</div>
-
-<app-add-edit-device
-  [display]="displayDialog"
-  [device]="selectedDevice"
-  (onSave)="SaveDevice($event)"
-  (onClose)="displayDialog = false"
-></app-add-edit-device>
-
-<p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle"></p-confirmDialog>
-<p-toast></p-toast>
+</div><app-add-edit-device [display]="displayDialog" [device]="selectedDevice" (onSave)="SaveDevice($event)"
+  (onClose)="displayDialog = false"></app-add-edit-device><p-confirmDialog header="Confirmation"
+  icon="pi pi-exclamation-triangle"></p-confirmDialog><p-toast></p-toast>

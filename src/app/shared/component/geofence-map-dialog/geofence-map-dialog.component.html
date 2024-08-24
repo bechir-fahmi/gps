@@ -2,17 +2,15 @@
   [style]="{ width: '90vw', height: '900vh' }" [contentStyle]="{ 'max-height': '75vh', 'overflow-y': 'auto' }"
   (onHide)="closeDialog()">
   <div class="p-fluid">
-    <div class="p-field input-spacing">
-      <label for="name">Name</label>
+    <div class="p-field input-spacing"><label for="name">NAME</label>
       <input id="name" type="text" pInputText [(ngModel)]="geofence.name" *ngIf="geofence"
         [disabled]="mode === 'view'" />
     </div>
   </div>
-  <div #mapContainer id="map" style="height: 80%; width: 100%;"></div>
-  <p-footer *ngIf="mode === 'edit'">
-    <p-button label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times" (click)="closeDialog()"></p-button>
-    <p-button label="Save" [disabled]="geofence?.name === ''||geofence?.area?.length === 0" icon="pi pi-check" (click)="saveGeofence()"></p-button>
-    <p-button label="Remove Shape" icon="pi pi-trash" (click)="removeSelectedOverlay()" [disabled]="!selectedOverlay">
-    </p-button>
-  </p-footer>
+  <div #mapContainer id="map" style="height: 80%; width: 100%;"></div><p-footer *ngIf="mode === 'edit'"><p-button
+      label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times"
+      (click)="closeDialog()"></p-button><p-button label="Save"
+      [disabled]="geofence?.name === ''||geofence?.area?.length === 0" icon="pi pi-check"
+      (click)="saveGeofence()"></p-button><p-button label="Remove Shape" icon="pi pi-trash"
+      (click)="removeSelectedOverlay()" [disabled]="!selectedOverlay"></p-button></p-footer>
 </p-dialog>

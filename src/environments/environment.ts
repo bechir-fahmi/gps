@@ -14,7 +14,7 @@ export const environment = {
     messagingSenderId: "1047853031946",
     measurementId: "G-814W3JCWFQ"
   },
-  googleMapsApiKey:"AIzaSyDd385aYk0_3VuO90Bfw0lPWkPhE9VVMUA",
+  googleMapsApiKey:"AIzaSyAX00VQM7Gopm0mk391037s9uES5HAant4",
   bingMapsApiKey:"Arwq0wsSUyk7zpuX1djqRhD_5-JfSoQJXuyYkG76_EDfx21x2dVopfA_vJ52YmE_",
   // API:'http://62.171.175.160:31183',
   secret_key:"487bee8a5f0375ee450bea7f4fc932b0bf9111a87b1f20c90861b0cc2a07b5b7"

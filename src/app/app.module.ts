@@ -14,7 +14,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { GoogleMapsLoaderService } from './Services/google-map-loader/google-maps-loader.service';
 import { LoginComponent } from './routes/login/login.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClient, HttpClientModule } from '@angular/common/http';
 import { DeviceCardComponent } from './routes/device-card/device-card.component';
 import { DragDropModule } from 'primeng/dragdrop';
 import { AuthInterceptor } from './auth.interceptor';
@@ -61,8 +61,14 @@ import { InputMaskModule } from 'primeng/inputmask';
 import { ReportingComponent } from './routes/reporting/reporting.component';
 import { LeafletModule } from '@asymmetrik/ngx-leaflet';
 import { LeafletMapComponent } from './routes/map/leaflet-map/leaflet-map.component';
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService): () => Promise<void> {
   return (): Promise<void> => googleMapsLoader.load();
+}
+
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
 }
 
 @NgModule({
@@ -124,7 +130,14 @@ export function initializeGoogleMaps(googleMapsLoader: GoogleMapsLoaderService):
     SpeedDialModule,
     InputTextareaModule,
     InputMaskModule,
-    LeafletModule
+    LeafletModule,
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient]
+      }
+    })
     //error handling module need to be fixed soon :/
     // provideFirebaseApp(() => initializeApp(environment.firebase)),
     // provideFirestore(() => getFirestore())

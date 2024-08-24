@@ -1,79 +1,36 @@
 <p-dialog header="Device Details" [(visible)]="display" [modal]="true" [closable]="true" [style]="{ width: '60vw' }"
-  (onHide)="close()">
-  <p-accordion>
-    <p-accordionTab header="Device Information" [selected]="true">
-      <div class="p-fluid">
-        <!-- Name Input -->
-        <div class="p-field">
-          <label for="name">Name</label>
-          <input id="name" type="text" pInputText [(ngModel)]="device.name" *ngIf="device" required />
+  (onHide)="close()"><p-accordion><p-accordionTab header="Device Information" [selected]="true">
+      <div class="p-fluid"><!-- Name Input -->
+        <div class="p-field"><label for="name">NAME</label><input id="name" type="text" pInputText
+            [(ngModel)]="device.name" *ngIf="device" required /></div><!-- Unique ID Input -->
+        <div class="p-field"><label for="uniqueId">UNIQUE_ID</label><input id="uniqueId" type="text" pInputText
+            [(ngModel)]="device.uniqueId" *ngIf="device" required /></div>
+        <div class="p-field"><label for="sim">SIM</label><p-inputMask id="sim" mask="99-999-999"
+            [(ngModel)]="device.attributes['sim']" *ngIf="device" required placeholder="99-999-999" />
         </div>
-
-        <!-- Unique ID Input -->
-        <div class="p-field">
-          <label for="uniqueId">Unique ID</label>
-          <input id="uniqueId" type="text" pInputText [(ngModel)]="device.uniqueId" *ngIf="device" required />
+        <div class="p-field"><label for="expirationTime">EXPIRATION_TIME</label><input id="expirationTime" type="date"
+            pInputText [(ngModel)]="device.attributes['expirationTime']" *ngIf="device" />
         </div>
-        <div class="p-field">
-          <label for="sim">sim</label>
-          <p-inputMask id="sim" mask="99-999-999" [(ngModel)]="device.attributes['sim']" *ngIf="device" required  placeholder="99-999-999" />
-        </div>
-        <div class="p-field">
-          <label for="expirationTime">Expiration Time</label>
-          <input id="expirationTime" type="date" pInputText [(ngModel)]="device.attributes['expirationTime']"
-            *ngIf="device" />
-        </div>
-        <div class="p-field">
-          <label for="speedLimite">Speed Limite</label>
-          <input id="speedLimite" type="number" pInputText [(ngModel)]="device.attributes['speedLimite']"
-            *ngIf="device" />
-        </div>
-        <!-- Additional fields visible only in edit mode -->
-        <div *ngIf="isEditMode">
-          <!-- Status Input -->
-          <div class="p-field">
-            <label for="status">Status</label>
-            <input id="status" type="text" pInputText [(ngModel)]="device.status" *ngIf="device" />
-          </div>
-
-          <!-- Disabled Checkbox -->
-          <div class="p-field-checkbox">
-            <p-checkbox id="disabled" [(ngModel)]="device.disabled" *ngIf="device" binary="true"></p-checkbox>
-            <label for="disabled">Disabled</label>
-          </div>
-
-          <!-- Phone Input -->
-          <div class="p-field">
-            <label for="phone">Phone</label>
-            <input id="phone" type="text" pInputText [(ngModel)]="device.phone" *ngIf="device" />
-          </div>
-
-          <!-- Model Input -->
-          <div class="p-field">
-            <label for="model">Model</label>
-            <input id="model" type="text" pInputText [(ngModel)]="device.model" *ngIf="device" />
-          </div>
-
-          <!-- Contact Input -->
-          <div class="p-field">
-            <label for="contact">Contact</label>
-            <input id="contact" type="text" pInputText [(ngModel)]="device.contact" *ngIf="device" />
-          </div>
-
-          <!-- Category Input -->
-          <div class="p-field">
-            <label for="category">Category</label>
-            <input id="category" type="text" pInputText [(ngModel)]="device.category" *ngIf="device" />
-          </div>
-
+        <div class="p-field"><label for="speedLimite">SPEED_LIMITE</label><input id="speedLimite" type="number"
+            pInputText [(ngModel)]="device.attributes['speedLimite']" *ngIf="device" /></div><!--
+  Additional fields visible only in edit mode -->
+        <div *ngIf="isEditMode"><!--
+  Status Input -->
+          <div class="p-field"><label for="status">STATUS</label><input id="status" type="text" pInputText
+              [(ngModel)]="device.status" *ngIf="device" /></div><!-- Disabled Checkbox -->
+          <div class="p-field-checkbox"><p-checkbox id="disabled" [(ngModel)]="device.disabled" *ngIf="device"
+              binary="true"></p-checkbox><label for="disabled">DISABLED</label></div><!-- Phone Input -->
+          <div class="p-field"><label for="phone">PHONE</label><input id="phone" type="text" pInputText
+              [(ngModel)]="device.phone" *ngIf="device" /></div><!-- Model
+    Input -->
+          <div class="p-field"><label for="model">MODEL</label><input id="model" type="text" pInputText
+              [(ngModel)]="device.model" *ngIf="device" /></div><!-- Contact Input -->
+          <div class="p-field"><label for="contact">CONTACT</label><input id="contact" type="text" pInputText
+              [(ngModel)]="device.contact" *ngIf="device" /></div><!-- Category Input -->
+          <div class="p-field"><label for="category">CATEGORY</label><input id="category" type="text" pInputText
+              [(ngModel)]="device.category" *ngIf="device" /></div>
         </div>
       </div>
-    </p-accordionTab>
-  </p-accordion>
-
-  <p-footer>
-    <p-button label="Cancel" [outlined]="true" severity="secondary" icon="pi pi-times" (click)="close()"></p-button>
-    <p-button label="Save" icon="pi pi-check" (click)="saveDevice()"
-      [disabled]="!device!.name || !device!.uniqueId"></p-button>
-  </p-footer>
-</p-dialog>
+    </p-accordionTab></p-accordion><p-footer><p-button label="Cancel" [outlined]="true" severity="secondary"
+      icon="pi pi-times" (click)="close()"></p-button><p-button label="Save" icon="pi pi-check" (click)="saveDevice()"
+      [disabled]="!device!.name || !device!.uniqueId"></p-button></p-footer></p-dialog>

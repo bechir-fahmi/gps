@@ -50,7 +50,17 @@ export class LinkUserDialogComponent implements OnInit {
         this.deviceService.getDevices({ userId: this.userId })
       ]).subscribe({
         next: ([allDevices, userDevices]) => {
-          this.devices = allDevices.filter(device =>device.attributes.Linked !== true);
+          this.devices = allDevices.filter(device =>
+            !device.attributes.Linked
+          );
+          this.devices.push(...userDevices);
+          this.devices.forEach(device => {
+            console.log("userDevices",userDevices);
+
+            console.log("userDevices.some(userDevice => userDevice.id === this.userId)",userDevices.some(userDevice => userDevice.id === this.userId));
+          console.log("!device.attributes.Linked",!device.attributes.Linked);
+          });
+
           this.selectedDevices = allDevices.filter(device =>
             userDevices.some(userDevice => userDevice.id === device.id)
           );
@@ -83,6 +93,11 @@ export class LinkUserDialogComponent implements OnInit {
       });
       this.initialSelectedDevices.forEach(device => {
         if (!this.selectedDevices.some(d => d.id === device.id)) {
+          device.attributes.Linked=false;
+          this.deviceService.updateDevice(device).subscribe(responses => {
+            console.log('responses', responses);
+
+          })
           removeObservables.push(this.userLinkService.RevokePermession(this.userId!, device.id, this._id));
         }
       });

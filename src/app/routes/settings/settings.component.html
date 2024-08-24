@@ -1,16 +1,11 @@
 <div class="settings-container">
-  <div class="sidebar">
-    <button pButton type="button" icon="pi pi-arrow-left" label="Back" class="back-button" (click)="goBack()"></button>
-    <p-menu #menu [model]="items" [popup]="false">
-    </p-menu>
-   <button pButton type="button" icon="pi pi-sign-out" class="back-button" label="Logout" (click)="logout()"></button>
-  </div>
-  <div class="settings-content">
-    <app-notifications *ngIf="selectedSection === 'notifications'"></app-notifications>
-    <app-geofence *ngIf="selectedSection === 'geofence'"></app-geofence>
-   <app-users *ngIf="selectedSection === 'users'"></app-users>
-   <app-device-management *ngIf="selectedSection === 'devices'"></app-device-management>
-   <app-reporting *ngIf="selectedSection === 'reporting'"></app-reporting>
-    <!-- Add more components as needed -->
-  </div>
+  <div class="sidebar"><button pButton type="button" icon="pi pi-arrow-left" label="Back" class="back-button"
+      (click)="goBack()"></button><p-menu #menu [model]="items" [popup]="false"></p-menu><button pButton type="button"
+      icon="pi pi-sign-out" class="back-button" label="Logout" (click)="logout()"></button></div>
+  <div class="settings-content"><app-notifications
+      *ngIf="selectedSection === 'notifications'"></app-notifications><app-geofence
+      *ngIf="selectedSection === 'geofence'"></app-geofence><app-users
+      *ngIf="selectedSection === 'users'"></app-users><app-device-management
+      *ngIf="selectedSection === 'devices'"></app-device-management><app-reporting
+      *ngIf="selectedSection === 'reporting'"></app-reporting><!-- Add more components as needed --></div>
 </div>

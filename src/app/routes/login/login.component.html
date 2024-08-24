@@ -1,51 +1,30 @@
-<div class="limiter">
-  <p-toast></p-toast>
+<div class="limiter"><p-toast></p-toast>
   <div class="container-login100">
     <div class="wrap-login100">
-      <div class="login100-form-title" style="background-image: url(../../../assets/images/logo/logo.svg);">
-        <span class="login100-form-title-1">
-          <!-- Sign In -->
-        </span>
-      </div>
-
+      <div class="login100-form-title" style="background-image: url(../../../assets/images/logo/logo.svg);"><span
+          class="login100-form-title-1"><!-- Sign In --></span></div>
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login100-form validate-form">
-        <div class="wrap-input100 validate-input m-b-26" [class.has-error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
-          <span class="label-input100">Username</span>
-          <input class="input100" type="text" formControlName="username" placeholder="Enter username">
-          <span class="focus-input100"></span>
+        <div class="wrap-input100 validate-input m-b-26"
+          [class.has-error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"><span
+            class="label-input100">USERNAME</span><input class="input100" type="text" formControlName="username"
+            placeholder="Enter username"><span class="focus-input100"></span>
           <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
-            Username is required
-          </div>
+            USERNAME_IS_REQUIRED</div>
         </div>
-
-        <div class="wrap-input100 validate-input m-b-18" [class.has-error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-          <span class="label-input100">Password</span>
-          <input class="input100" type="password" formControlName="password" placeholder="Enter password">
-          <span class="focus-input100"></span>
+        <div class="wrap-input100 validate-input m-b-18"
+          [class.has-error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"><span
+            class="label-input100">PASSWORD</span><input class="input100" type="password" formControlName="password"
+            placeholder="Enter password"><span class="focus-input100"></span>
           <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
-            Password is required
-          </div>
+            PASSWORD_IS_REQUIRED</div>
         </div>
-
         <div class="flex-sb-m w-full p-b-30">
-          <div class="contact100-form-checkbox">
-            <input class="input-checkbox100" id="ckb1" type="checkbox" formControlName="rememberMe">
-            <label class="label-checkbox100" for="ckb1">
-              Remember me
-            </label>
-          </div>
-
-          <div>
-            <a href="#" class="txt1">
-              Forgot Password?
-            </a>
-          </div>
+          <div class="contact100-form-checkbox"><input class="input-checkbox100" id="ckb1" type="checkbox"
+              formControlName="rememberMe"><label class="label-checkbox100" for="ckb1">REMEMBER_ME</label></div>
+          <div><a href="#" class="txt1">FORGOT_PASSWORD?</a></div>
         </div>
-
         <div class="container-login100-form-btn">
-          <button class="login100-form-btn" type="submit">
-            Login
-          </button>
+          <button class="login100-form-btn" type="submit">LOGIN</button>
         </div>
       </form>
     </div>
